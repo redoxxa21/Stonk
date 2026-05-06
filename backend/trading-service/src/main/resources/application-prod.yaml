@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5444/trading_db}
+    username: ${DB_USERNAME:stonks}
+    password: ${DB_PASSWORD:stonks123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: true
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+
+service:
+  user:
+    base-url: ${SERVICE_USER_URL:http://user-service:2700}

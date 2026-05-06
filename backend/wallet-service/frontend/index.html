@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stonk Console</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Stonk Platform</div>
+        <h1>Control Console</h1>
+      </div>
+      <div class="session-strip">
+        <span id="connectionBadge" class="badge badge-neutral">Checking gateway</span>
+        <button id="pingBtn" class="btn btn-secondary" type="button">Ping Gateway</button>
+        <button id="clearBtn" class="btn btn-secondary" type="button">Clear Session</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="status-bar">
+        <div>
+          <div class="label">Signed in</div>
+          <div id="sessionUser" class="value">No active session</div>
+        </div>
+        <div>
+          <div class="label">Current User ID</div>
+          <div id="sessionUserId" class="value">-</div>
+        </div>
+        <div>
+          <div class="label">Token</div>
+          <div id="sessionToken" class="value mono">Not stored</div>
+        </div>
+        <div>
+          <div class="label">API</div>
+          <div class="value mono">/api</div>
+        </div>
+      </section>
+
+      <section class="tabs" aria-label="Primary sections">
+        <button class="tab active" data-tab="auth">Auth</button>
+        <button class="tab" data-tab="users">Users</button>
+        <button class="tab" data-tab="wallet">Wallet</button>
+        <button class="tab" data-tab="portfolio">Portfolio</button>
+        <button class="tab" data-tab="trades">Trades</button>
+      </section>
+
+      <section id="messageBar" class="message hidden" role="status"></section>
+
+      <section class="panel active" data-panel="auth">
+        <div class="panel-head">
+          <h2>Authentication</h2>
+          <p>Register, log in, and hydrate the current session from the user service.</p>
+        </div>
+
+        <div class="grid two">
+          <form id="registerForm" class="form">
+            <h3>Register</h3>
+            <label>
+              Username
+              <input name="username" minlength="3" maxlength="50" required />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" required />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" minlength="6" required />
+            </label>
+            <label>
+              Role
+              <select name="role">
+                <option value="">USER</option>
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </label>
+            <button class="btn btn-primary" type="submit">Create Account</button>
+          </form>
+
+          <form id="loginForm" class="form">
+            <h3>Login</h3>
+            <label>
+              Username
+              <input name="username" required />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Open Session</button>
+          </form>
+        </div>
+
+        <div class="form span-all">
+          <h3>Session Snapshot</h3>
+          <pre id="authResult" class="output">No authentication response yet.</pre>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="users">
+        <div class="panel-head">
+          <h2>Users</h2>
+          <p>List users, look up a username, inspect by ID, update profile fields, or delete a user.</p>
+        </div>
+
+        <div class="grid three">
+          <form id="userByUsernameForm" class="form">
+            <h3>Find by Username</h3>
+            <label>
+              Username
+              <input name="username" placeholder="John" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Search</button>
+          </form>
+
+          <form id="userByIdForm" class="form">
+            <h3>Find by ID</h3>
+            <label>
+              User ID
+              <input name="id" type="number" min="1" placeholder="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Search</button>
+          </form>
+
+          <div class="form">
+            <h3>Actions</h3>
+            <div class="button-stack">
+              <button id="loadUsersBtn" class="btn btn-secondary" type="button">Load All Users</button>
+              <button id="useSessionUserBtn" class="btn btn-secondary" type="button">Use Session User</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <form id="updateUserForm" class="form">
+            <h3>Update User</h3>
+            <label>
+              User ID
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label>
+              Username
+              <input name="username" />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" />
+            </label>
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </form>
+
+          <form id="deleteUserForm" class="form">
+            <h3>Delete User</h3>
+            <label>
+              User ID
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button class="btn btn-danger" type="submit">Delete</button>
+          </form>
+        </div>
+
+        <div class="form span-all">
+          <h3>Users Result</h3>
+          <div id="usersResult" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="wallet">
+        <div class="panel-head">
+          <h2>Wallet</h2>
+          <p>Create wallets, inspect balances, and record deposits or withdrawals.</p>
+        </div>
+
+        <div class="grid three">
+          <form id="walletLookupForm" class="form">
+            <h3>Get Wallet</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Load Wallet</button>
+          </form>
+
+          <form id="walletCreateForm" class="form">
+            <h3>Create Wallet</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <button class="btn btn-secondary" type="submit">Create</button>
+          </form>
+
+          <div class="form">
+            <h3>Quick Fill</h3>
+            <div class="button-stack">
+              <button id="walletUseSessionBtn" class="btn btn-secondary" type="button">Use Session User</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <form id="walletChangeForm" class="form">
+            <h3>Balance Change</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <label>
+              Amount
+              <input name="amount" type="number" min="0.01" step="0.01" required />
+            </label>
+            <div class="inline">
+              <button class="btn btn-secondary" name="action" value="deposit" type="submit">Deposit</button>
+              <button class="btn btn-secondary" name="action" value="withdraw" type="submit">Withdraw</button>
+              <button class="btn btn-secondary" name="action" value="debit" type="submit">Debit</button>
+              <button class="btn btn-secondary" name="action" value="credit" type="submit">Credit</button>
+            </div>
+          </form>
+
+          <form id="walletTxForm" class="form">
+            <h3>Transactions</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Load History</button>
+          </form>
+        </div>
+
+        <div class="form span-all">
+          <h3>Wallet Result</h3>
+          <div id="walletResult" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="portfolio">
+        <div class="panel-head">
+          <h2>Portfolio</h2>
+          <p>Inspect holdings and submit buy or sell requests for a user.</p>
+        </div>
+
+        <div class="grid three">
+          <form id="portfolioLookupForm" class="form">
+            <h3>Get Portfolio</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Load Holdings</button>
+          </form>
+
+          <form id="holdingLookupForm" class="form">
+            <h3>Get Holding</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <label>
+              Symbol
+              <input name="symbol" placeholder="AAPL" required />
+            </label>
+            <button class="btn btn-secondary" type="submit">Search</button>
+          </form>
+
+          <div class="form">
+            <h3>Quick Fill</h3>
+            <div class="button-stack">
+              <button id="portfolioUseSessionBtn" class="btn btn-secondary" type="button">Use Session User</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <form id="portfolioTradeForm" class="form">
+            <h3>Buy / Sell Holding</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <label>
+              Symbol
+              <input name="symbol" required />
+            </label>
+            <label>
+              Quantity
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              Price
+              <input name="price" type="number" min="0.01" step="0.01" required />
+            </label>
+            <div class="inline">
+              <button class="btn btn-secondary" name="action" value="buy" type="submit">Buy</button>
+              <button class="btn btn-secondary" name="action" value="sell" type="submit">Sell</button>
+            </div>
+          </form>
+
+          <div class="form">
+            <h3>Portfolio Result</h3>
+            <div id="portfolioResult" class="table-wrap"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="trades">
+        <div class="panel-head">
+          <h2>Trades</h2>
+          <p>Execute buy or sell orders and inspect trade history or a specific trade.</p>
+        </div>
+
+        <div class="grid three">
+          <form id="tradeActionForm" class="form">
+            <h3>Buy / Sell</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <label>
+              Symbol
+              <input name="symbol" required />
+            </label>
+            <label>
+              Quantity
+              <input name="quantity" type="number" min="1" step="1" required />
+            </label>
+            <div class="inline">
+              <button class="btn btn-secondary" name="action" value="buy" type="submit">Buy</button>
+              <button class="btn btn-secondary" name="action" value="sell" type="submit">Sell</button>
+            </div>
+          </form>
+
+          <form id="tradeListForm" class="form">
+            <h3>List Trades</h3>
+            <label>
+              User ID
+              <input name="userId" type="number" min="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Load Trades</button>
+          </form>
+
+          <form id="tradeDetailForm" class="form">
+            <h3>Trade Detail</h3>
+            <label>
+              Trade ID
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button class="btn btn-primary" type="submit">Load Detail</button>
+          </form>
+        </div>
+
+        <div class="form span-all">
+          <h3>Trades Result</h3>
+          <div id="tradesResult" class="table-wrap"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

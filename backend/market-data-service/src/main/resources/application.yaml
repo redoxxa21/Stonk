@@ -1,0 +1,48 @@
+server:
+  port: ${SERVER_PORT:2650}
+
+spring:
+  application:
+    name: market-data-service
+
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:market_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.h2.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: ${SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED:false}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:false}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:false}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:mysecretkeymysecretkeymysecretkey12}
+
+market:
+  price-update-interval-ms: ${MARKET_PRICE_UPDATE_INTERVAL_MS:30000}
+  max-fluctuation-percent: ${MARKET_MAX_FLUCTUATION_PERCENT:2.0}

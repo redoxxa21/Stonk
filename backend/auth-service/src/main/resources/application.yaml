@@ -1,0 +1,48 @@
+server:
+  port: ${SERVER_PORT:2590}
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:../shared-data/stonk;MODE=PostgreSQL;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.h2.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: ${SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED:false}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:false}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:false}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:mysecretkeymysecretkeymysecretkey12}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}

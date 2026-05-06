@@ -1,0 +1,73 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+
+        - id: wallet-service
+          uri: lb://wallet-service
+          predicates:
+            - Path=/wallet/**
+
+        - id: trading-service
+          uri: lb://trading-service
+          predicates:
+            - Path=/trades/**
+
+        - id: portfolio-service
+          uri: lb://portfolio-service
+          predicates:
+            - Path=/portfolio/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/orders/**
+
+        - id: market-data-service
+          uri: lb://market-data-service
+          predicates:
+            - Path=/market/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:false}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:false}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY:mysecretkeymysecretkeymysecretkey12}
+
+gateway:
+  open-paths:
+    - /auth/register
+    - /auth/login
+    - /actuator/health
+    - /actuator/info
