@@ -1,7 +1,7 @@
 package io.stonk.portfolio.service.impl;
 
 import io.stonk.portfolio.client.UserDirectoryClient;
-import io.stonk.portfolio.client.WalletClient;
+
 import io.stonk.portfolio.dto.HoldingResponse;
 import io.stonk.portfolio.dto.UserLookupResponse;
 import io.stonk.portfolio.entity.PortfolioHolding;
@@ -28,14 +28,10 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     private final PortfolioHoldingRepository holdingRepository;
     private final UserDirectoryClient userDirectoryClient;
-    private final WalletClient walletClient;
-
     public PortfolioServiceImpl(PortfolioHoldingRepository holdingRepository,
-                                UserDirectoryClient userDirectoryClient,
-                                WalletClient walletClient) {
+                                UserDirectoryClient userDirectoryClient) {
         this.holdingRepository = holdingRepository;
         this.userDirectoryClient = userDirectoryClient;
-        this.walletClient = walletClient;
     }
 
     @Override
@@ -83,7 +79,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         holdingRepository.save(holding);
-        walletClient.debit(user.getId(), cost, bearerToken);
+
         log.info("Added {} shares of {} for userId:{} @ {}", quantity, sym, user.getId(), price);
         return toResponse(holding, user.getUsername());
     }
@@ -104,7 +100,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         int newQty = holding.getQuantity() - quantity;
         if (newQty == 0) {
             holdingRepository.delete(holding);
-            walletClient.credit(user.getId(), proceeds, bearerToken);
+
             log.info("Sold all {} shares of {} for userId:{}", quantity, sym, user.getId());
             return HoldingResponse.builder().id(user.getId()).username(user.getUsername()).symbol(sym).quantity(0)
                     .averagePrice(BigDecimal.ZERO).totalInvested(BigDecimal.ZERO).build();
@@ -114,7 +110,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         holding.setQuantity(newQty);
         holding.setTotalInvested(holding.getTotalInvested().subtract(soldPortion));
         holdingRepository.save(holding);
-        walletClient.credit(user.getId(), proceeds, bearerToken);
+
         log.info("Reduced {} shares of {} for userId:{}, remaining: {}", quantity, sym, user.getId(), newQty);
         return toResponse(holding, user.getUsername());
     }

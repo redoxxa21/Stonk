@@ -105,6 +105,7 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
+      - USER_SERVICE_URL=http://stonks-user:2700
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,6 +144,7 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
+      - USER_SERVICE_URL=http://stonks-user:2700
     depends_on:
       postgres:
         condition: service_healthy
@@ -163,7 +165,7 @@ services:
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
       - USER_SERVICE_URL=http://stonks-user:2700
-      - WALLET_SERVICE_URL=http://stonks-wallet:2500
+
     depends_on:
       postgres:
         condition: service_healthy

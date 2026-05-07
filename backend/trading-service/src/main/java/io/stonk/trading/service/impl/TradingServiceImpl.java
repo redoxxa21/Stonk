@@ -4,6 +4,7 @@ import io.stonk.trading.client.MarketDataClient;
 import io.stonk.trading.client.OrderClient;
 import io.stonk.trading.client.PortfolioClient;
 import io.stonk.trading.client.UserDirectoryClient;
+import io.stonk.trading.client.WalletClient;
 import io.stonk.trading.dto.TradeRequest;
 import io.stonk.trading.dto.TradeResponse;
 import io.stonk.trading.dto.UserLookupResponse;
@@ -31,17 +32,20 @@ public class TradingServiceImpl implements TradingService {
     private final PortfolioClient portfolioClient;
     private final OrderClient orderClient;
     private final UserDirectoryClient userDirectoryClient;
+    private final WalletClient walletClient;
 
     public TradingServiceImpl(TradeRepository tradeRepository,
                               MarketDataClient marketDataClient,
                               PortfolioClient portfolioClient,
                               OrderClient orderClient,
-                              UserDirectoryClient userDirectoryClient) {
+                              UserDirectoryClient userDirectoryClient,
+                              WalletClient walletClient) {
         this.tradeRepository = tradeRepository;
         this.marketDataClient = marketDataClient;
         this.portfolioClient = portfolioClient;
         this.orderClient = orderClient;
         this.userDirectoryClient = userDirectoryClient;
+        this.walletClient = walletClient;
     }
 
     /**
@@ -64,7 +68,10 @@ public class TradingServiceImpl implements TradingService {
             BigDecimal price = marketDataClient.getCurrentPrice(symbol, authHeader);
             BigDecimal totalCost = price.multiply(BigDecimal.valueOf(req.getQuantity()));
 
-            // 2. Add to portfolio; portfolio-service debits the wallet for the cost.
+            // 2. Debit wallet
+            walletClient.debit(user.getId(), totalCost, authHeader);
+
+            // 3. Add to portfolio
             portfolioClient.addHolding(user.getId(), symbol, req.getQuantity(), price, authHeader);
 
             // 3. Create and complete order
@@ -111,8 +118,11 @@ public class TradingServiceImpl implements TradingService {
             BigDecimal price = marketDataClient.getCurrentPrice(symbol, authHeader);
             BigDecimal totalProceeds = price.multiply(BigDecimal.valueOf(req.getQuantity()));
 
-            // 2. Reduce portfolio; portfolio-service credits the wallet for the proceeds.
+            // 2. Reduce portfolio (validates sufficient shares)
             portfolioClient.reduceHolding(user.getId(), symbol, req.getQuantity(), price, authHeader);
+
+            // 3. Credit wallet
+            walletClient.credit(user.getId(), totalProceeds, authHeader);
 
             // 3. Create and complete order
             Long orderId = orderClient.createOrder(user.getId(), symbol, "SELL", req.getQuantity(), price, authHeader);

@@ -46,4 +46,4 @@ jwt:
 
 portfolio:
   user-service-base-url: ${USER_SERVICE_URL:http://localhost:2700}
-  wallet-service-base-url: ${WALLET_SERVICE_URL:http://localhost:2500}
+
