@@ -11,6 +11,9 @@ import io.stonk.auth.repository.UserRepository;
 import io.stonk.auth.security.JwtService;
 import io.stonk.auth.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.stonk.auth.dto.UserRegisteredEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +32,19 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     public AuthServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           JwtService jwtService) {
+                           JwtService jwtService,
+                           KafkaTemplate<String, String> kafkaTemplate,
+                           ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
     // ────────────────────────────────────────────────
@@ -71,6 +80,20 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
         log.info("New user registered: '{}' with role {}", user.getUsername(), role);
+
+        try {
+            UserRegisteredEvent event = UserRegisteredEvent.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .build();
+            String eventJson = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send("user-registration", eventJson);
+            log.debug("Published UserRegisteredEvent to Kafka for {}", user.getUsername());
+        } catch (Exception e) {
+            log.error("Failed to publish UserRegisteredEvent to Kafka for {}", user.getUsername(), e);
+        }
 
         String token = jwtService.generateToken(user);
 

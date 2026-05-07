@@ -37,7 +37,7 @@ public interface UserService {
      * @return an unmodifiable list of user profiles
      */
     List<UserResponse> getAllUsers();
-
+ 
     /**
      * Updates the mutable fields (username / email) of an existing user.
      *

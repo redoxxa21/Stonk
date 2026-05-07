@@ -29,13 +29,6 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    /**
-     * Hashed password. Managed exclusively by Auth Service.
-     * Never returned in responses — see {@link io.stonk.user.dto.UserResponse}.
-     */
-    @Column(nullable = false)
-    private String password;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
