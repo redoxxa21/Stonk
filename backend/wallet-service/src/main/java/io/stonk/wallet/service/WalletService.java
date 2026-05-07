@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface WalletService {
-    WalletResponse createWallet(Long userId, String bearerToken);
+    WalletResponse createWallet(Long userId);
     WalletResponse getWallet(Long userId);
     WalletResponse deposit(Long userId, BigDecimal amount);
     WalletResponse withdraw(Long userId, BigDecimal amount);

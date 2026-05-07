@@ -2,6 +2,18 @@ server:
   port: ${SERVER_PORT:2500}
 
 spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_URL:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: ${spring.application.name}-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   application:
     name: wallet-service
 
@@ -46,3 +58,5 @@ wallet:
   default-currency: ${WALLET_DEFAULT_CURRENCY:USD}
   default-balance: ${WALLET_DEFAULT_BALANCE:0.00}
   user-service-base-url: ${USER_SERVICE_URL:http://localhost:2700}
+
+

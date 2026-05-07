@@ -1,9 +1,8 @@
 package io.stonk.wallet.service.impl;
 
-import io.stonk.wallet.client.UserDirectoryClient;
+import io.stonk.wallet.security.JwtUser;
 import io.stonk.wallet.dto.TransactionResponse;
 import io.stonk.wallet.dto.WalletResponse;
-import io.stonk.wallet.dto.UserLookupResponse;
 import io.stonk.wallet.entity.Transaction;
 import io.stonk.wallet.entity.TransactionType;
 import io.stonk.wallet.entity.Wallet;
@@ -28,37 +27,34 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final UserDirectoryClient userDirectoryClient;
     private final String defaultCurrency;
     private final BigDecimal defaultBalance;
 
     public WalletServiceImpl(WalletRepository walletRepository,
                              TransactionRepository transactionRepository,
-                             UserDirectoryClient userDirectoryClient,
                              @Value("${wallet.default-currency:USD}") String defaultCurrency,
                              @Value("${wallet.default-balance:0.00}") BigDecimal defaultBalance) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-        this.userDirectoryClient = userDirectoryClient;
         this.defaultCurrency = defaultCurrency;
         this.defaultBalance = defaultBalance;
     }
 
     @Override
     @Transactional
-    public WalletResponse createWallet(Long userId, String bearerToken) {
-        UserLookupResponse user = userDirectoryClient.getUserById(userId, bearerToken);
+    public WalletResponse createWallet(Long userId) {
+        JwtUser user = validateUserAccess(userId);
         if (walletRepository.existsById(userId)) {
             throw new WalletAlreadyExistsException(userId);
         }
         Wallet wallet = Wallet.builder()
-                .id(user.getId())
-                .username(user.getUsername())
+                .id(user.id())
+                .username(user.username())
                 .balance(defaultBalance)
                 .currency(defaultCurrency)
                 .build();
         walletRepository.save(wallet);
-        log.info("Created wallet for userId: {} username: {}", user.getId(), user.getUsername());
+        log.info("Created wallet for userId: {} username: {}", user.id(), user.username());
         return toResponse(wallet);
     }
 
@@ -145,5 +141,16 @@ public class WalletServiceImpl implements WalletService {
         return TransactionResponse.builder().id(t.getId()).type(t.getType()).amount(t.getAmount())
                 .balanceAfter(t.getBalanceAfter()).description(t.getDescription())
                 .createdAt(t.getCreatedAt()).build();
+    }
+
+    private JwtUser validateUserAccess(Long userId) {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUser jwtUser)) {
+            throw new io.stonk.wallet.exception.WalletNotFoundException(userId); // Or a specific access denied exception
+        }
+        if (!userId.equals(jwtUser.id())) {
+            throw new io.stonk.wallet.exception.WalletNotFoundException(userId);
+        }
+        return jwtUser;
     }
 }

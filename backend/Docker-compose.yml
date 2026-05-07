@@ -106,11 +106,14 @@ services:
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
       - USER_SERVICE_URL=http://stonks-user:2700
+      - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
 
   market-data-service:
     build:
@@ -145,11 +148,14 @@ services:
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
       - USER_SERVICE_URL=http://stonks-user:2700
+      - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
 
   portfolio-service:
     build:
@@ -165,12 +171,14 @@ services:
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
       - USER_SERVICE_URL=http://stonks-user:2700
-
+      - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
 
   trading-service:
     build:
@@ -185,11 +193,14 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
+      - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
 
   kafka:
     image: apache/kafka:3.7.0

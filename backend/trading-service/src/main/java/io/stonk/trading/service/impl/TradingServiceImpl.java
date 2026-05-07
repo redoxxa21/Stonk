@@ -1,13 +1,11 @@
 package io.stonk.trading.service.impl;
 
 import io.stonk.trading.client.MarketDataClient;
-import io.stonk.trading.client.OrderClient;
-import io.stonk.trading.client.PortfolioClient;
-import io.stonk.trading.client.UserDirectoryClient;
-import io.stonk.trading.client.WalletClient;
+import io.stonk.trading.security.JwtUser;
+
 import io.stonk.trading.dto.TradeRequest;
 import io.stonk.trading.dto.TradeResponse;
-import io.stonk.trading.dto.UserLookupResponse;
+
 import io.stonk.trading.entity.Trade;
 import io.stonk.trading.entity.TradeStatus;
 import io.stonk.trading.entity.TradeType;
@@ -16,6 +14,7 @@ import io.stonk.trading.exception.TradeNotFoundException;
 import io.stonk.trading.repository.TradeRepository;
 import io.stonk.trading.service.TradingService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,128 +28,106 @@ public class TradingServiceImpl implements TradingService {
 
     private final TradeRepository tradeRepository;
     private final MarketDataClient marketDataClient;
-    private final PortfolioClient portfolioClient;
-    private final OrderClient orderClient;
-    private final UserDirectoryClient userDirectoryClient;
-    private final WalletClient walletClient;
+
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public TradingServiceImpl(TradeRepository tradeRepository,
                               MarketDataClient marketDataClient,
-                              PortfolioClient portfolioClient,
-                              OrderClient orderClient,
-                              UserDirectoryClient userDirectoryClient,
-                              WalletClient walletClient) {
+                              KafkaTemplate<String, Object> kafkaTemplate) {
         this.tradeRepository = tradeRepository;
         this.marketDataClient = marketDataClient;
-        this.portfolioClient = portfolioClient;
-        this.orderClient = orderClient;
-        this.userDirectoryClient = userDirectoryClient;
-        this.walletClient = walletClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     /**
-     * BUY flow:
+     * BUY flow (Saga Orchestrator):
      * 1. Get current price from Market Data Service
-     * 2. Debit wallet (total cost)
-     * 3. Add holding to Portfolio
-     * 4. Create order → mark completed
-     * 5. Save trade record
+     * 2. Save Trade as PENDING
+     * 3. Publish TradeInitiatedEvent
      */
     @Override
     @Transactional
     public TradeResponse executeBuy(TradeRequest req, String authHeader) {
         String symbol = req.getSymbol().toUpperCase();
-        UserLookupResponse user = userDirectoryClient.getUserById(req.getUserId(), authHeader);
-        log.info("Executing BUY: userId={}, symbol={}, qty={}", req.getUserId(), symbol, req.getQuantity());
+        JwtUser user = validateUserAccess(req.getUserId());
+        log.info("Initiating BUY Saga: userId={}, symbol={}, qty={}", req.getUserId(), symbol, req.getQuantity());
 
         try {
-            // 1. Get price
             BigDecimal price = marketDataClient.getCurrentPrice(symbol, authHeader);
             BigDecimal totalCost = price.multiply(BigDecimal.valueOf(req.getQuantity()));
 
-            // 2. Debit wallet
-            walletClient.debit(user.getId(), totalCost, authHeader);
-
-            // 3. Add to portfolio
-            portfolioClient.addHolding(user.getId(), symbol, req.getQuantity(), price, authHeader);
-
-            // 3. Create and complete order
-            Long orderId = orderClient.createOrder(user.getId(), symbol, "BUY", req.getQuantity(), price, authHeader);
-            if (orderId != null) {
-                orderClient.completeOrder(orderId, authHeader);
-            }
-
-            // 4. Save trade
             Trade trade = Trade.builder()
-                    .userId(user.getId()).symbol(symbol).type(TradeType.BUY)
+                    .userId(user.id()).symbol(symbol).type(TradeType.BUY)
                     .quantity(req.getQuantity()).price(price).totalAmount(totalCost)
-                    .status(TradeStatus.COMPLETED).orderId(orderId).build();
-            tradeRepository.save(trade);
+                    .status(TradeStatus.PENDING).build();
+            trade = tradeRepository.save(trade);
 
-            log.info("BUY trade #{} completed: {} x {} @ {} = {}", trade.getId(), symbol, req.getQuantity(), price, totalCost);
+            io.stonk.trading.event.TradeInitiatedEvent event = io.stonk.trading.event.TradeInitiatedEvent.builder()
+                    .tradeId(trade.getId())
+                    .userId(user.id())
+                    .symbol(symbol)
+                    .quantity(req.getQuantity())
+                    .price(price)
+                    .type(TradeType.BUY)
+                    .totalAmount(totalCost)
+                    .build();
+            
+            kafkaTemplate.send("trade-initiated", event);
+            log.info("Saga Initiated - BUY trade #{} pending", trade.getId());
             return toResponse(trade);
 
-        } catch (TradeExecutionException ex) {
-            throw ex;
         } catch (Exception ex) {
-            log.error("BUY failed for userId:{} symbol:{} — {}", req.getUserId(), symbol, ex.getMessage());
-            throw new TradeExecutionException("Buy trade failed: " + ex.getMessage(), ex);
+            log.error("BUY initiation failed for userId:{} symbol:{} — {}", req.getUserId(), symbol, ex.getMessage());
+            throw new TradeExecutionException("Buy trade initiation failed: " + ex.getMessage(), ex);
         }
     }
 
     /**
-     * SELL flow:
+     * SELL flow (Saga Orchestrator):
      * 1. Get current price from Market Data Service
-     * 2. Reduce holding in Portfolio (validates sufficient shares)
-     * 3. Credit wallet (total proceeds)
-     * 4. Create order → mark completed
-     * 5. Save trade record
+     * 2. Save Trade as PENDING
+     * 3. Publish TradeInitiatedEvent
      */
     @Override
     @Transactional
     public TradeResponse executeSell(TradeRequest req, String authHeader) {
         String symbol = req.getSymbol().toUpperCase();
-        UserLookupResponse user = userDirectoryClient.getUserById(req.getUserId(), authHeader);
-        log.info("Executing SELL: userId={}, symbol={}, qty={}", req.getUserId(), symbol, req.getQuantity());
+        JwtUser user = validateUserAccess(req.getUserId());
+        log.info("Initiating SELL Saga: userId={}, symbol={}, qty={}", req.getUserId(), symbol, req.getQuantity());
 
         try {
-            // 1. Get price
             BigDecimal price = marketDataClient.getCurrentPrice(symbol, authHeader);
             BigDecimal totalProceeds = price.multiply(BigDecimal.valueOf(req.getQuantity()));
 
-            // 2. Reduce portfolio (validates sufficient shares)
-            portfolioClient.reduceHolding(user.getId(), symbol, req.getQuantity(), price, authHeader);
-
-            // 3. Credit wallet
-            walletClient.credit(user.getId(), totalProceeds, authHeader);
-
-            // 3. Create and complete order
-            Long orderId = orderClient.createOrder(user.getId(), symbol, "SELL", req.getQuantity(), price, authHeader);
-            if (orderId != null) {
-                orderClient.completeOrder(orderId, authHeader);
-            }
-
-            // 4. Save trade
             Trade trade = Trade.builder()
-                    .userId(user.getId()).symbol(symbol).type(TradeType.SELL)
+                    .userId(user.id()).symbol(symbol).type(TradeType.SELL)
                     .quantity(req.getQuantity()).price(price).totalAmount(totalProceeds)
-                    .status(TradeStatus.COMPLETED).orderId(orderId).build();
-            tradeRepository.save(trade);
+                    .status(TradeStatus.PENDING).build();
+            trade = tradeRepository.save(trade);
 
-            log.info("SELL trade #{} completed: {} x {} @ {} = {}", trade.getId(), symbol, req.getQuantity(), price, totalProceeds);
+            io.stonk.trading.event.TradeInitiatedEvent event = io.stonk.trading.event.TradeInitiatedEvent.builder()
+                    .tradeId(trade.getId())
+                    .userId(user.id())
+                    .symbol(symbol)
+                    .quantity(req.getQuantity())
+                    .price(price)
+                    .type(TradeType.SELL)
+                    .totalAmount(totalProceeds)
+                    .build();
+            
+            kafkaTemplate.send("trade-initiated", event);
+            log.info("Saga Initiated - SELL trade #{} pending", trade.getId());
             return toResponse(trade);
 
-        } catch (TradeExecutionException ex) {
-            throw ex;
         } catch (Exception ex) {
-            log.error("SELL failed for userId:{} symbol:{} — {}", req.getUserId(), symbol, ex.getMessage());
-            throw new TradeExecutionException("Sell trade failed: " + ex.getMessage(), ex);
+            log.error("SELL initiation failed for userId:{} symbol:{} — {}", req.getUserId(), symbol, ex.getMessage());
+            throw new TradeExecutionException("Sell trade initiation failed: " + ex.getMessage(), ex);
         }
     }
 
     @Override
     public List<TradeResponse> getTradesByUser(Long userId, String authHeader) {
-        userDirectoryClient.getUserById(userId, authHeader);
+        validateUserAccess(userId);
         return tradeRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::toResponse).toList();
     }
 
@@ -164,5 +141,16 @@ public class TradingServiceImpl implements TradingService {
                 .type(t.getType()).quantity(t.getQuantity()).price(t.getPrice())
                 .totalAmount(t.getTotalAmount()).status(t.getStatus()).orderId(t.getOrderId())
                 .createdAt(t.getCreatedAt()).build();
+    }
+
+    private JwtUser validateUserAccess(Long userId) {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUser jwtUser)) {
+            throw new org.springframework.security.access.AccessDeniedException("Access Denied");
+        }
+        if (!userId.equals(jwtUser.id())) {
+            throw new org.springframework.security.access.AccessDeniedException("Access Denied");
+        }
+        return jwtUser;
     }
 }

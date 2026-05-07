@@ -25,9 +25,8 @@ public class WalletController {
     }
 
     @PostMapping("/{userId}/create")
-    public ResponseEntity<WalletResponse> create(@PathVariable Long userId,
-                                                 @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(walletService.createWallet(userId, authorization));
+    public ResponseEntity<WalletResponse> create(@PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(walletService.createWallet(userId));
     }
 
     @GetMapping("/{userId}")

@@ -21,8 +21,8 @@ public class OrderController {
     public OrderController(OrderService orderService) { this.orderService = orderService; }
 
     @PostMapping
-    public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest req, HttpServletRequest httpReq) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(req, httpReq.getHeader("Authorization")));
+    public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(req));
     }
 
     @GetMapping("/detail/{id}")
@@ -31,8 +31,8 @@ public class OrderController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<OrderResponse>> getByUser(@PathVariable Long userId, HttpServletRequest httpReq) {
-        return ResponseEntity.ok(orderService.getOrdersByUser(userId, httpReq.getHeader("Authorization")));
+    public ResponseEntity<List<OrderResponse>> getByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(orderService.getOrdersByUser(userId));
     }
 
     @PutMapping("/{id}/complete")

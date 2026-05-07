@@ -1,0 +1,20 @@
+package io.stonk.trading.event;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PortfolioDeductedEvent {
+    private Long tradeId;
+    private Long userId;
+    private String symbol;
+    private int quantity;
+    private BigDecimal price;
+}

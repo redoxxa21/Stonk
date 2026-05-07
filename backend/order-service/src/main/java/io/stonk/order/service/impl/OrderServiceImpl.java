@@ -1,9 +1,8 @@
 package io.stonk.order.service.impl;
 
-import io.stonk.order.client.UserDirectoryClient;
+import io.stonk.order.security.JwtUser;
 import io.stonk.order.dto.CreateOrderRequest;
 import io.stonk.order.dto.OrderResponse;
-import io.stonk.order.dto.UserLookupResponse;
 import io.stonk.order.entity.OrderStatus;
 import io.stonk.order.entity.TradeOrder;
 import io.stonk.order.exception.OrderNotFoundException;
@@ -22,20 +21,17 @@ import java.util.List;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final UserDirectoryClient userDirectoryClient;
-
-    public OrderServiceImpl(OrderRepository orderRepository, UserDirectoryClient userDirectoryClient) {
+    public OrderServiceImpl(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
-        this.userDirectoryClient = userDirectoryClient;
     }
 
     @Override
     @Transactional
-    public OrderResponse createOrder(CreateOrderRequest req, String bearerToken) {
-        UserLookupResponse user = userDirectoryClient.getUserById(req.getUserId(), bearerToken);
+    public OrderResponse createOrder(CreateOrderRequest req) {
+        JwtUser user = validateUserAccess(req.getUserId());
         BigDecimal total = req.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
         TradeOrder order = TradeOrder.builder()
-                .userId(user.getId()).symbol(req.getSymbol().toUpperCase())
+                .userId(user.id()).symbol(req.getSymbol().toUpperCase())
                 .type(req.getType()).quantity(req.getQuantity()).price(req.getPrice())
                 .totalAmount(total).status(OrderStatus.PENDING).build();
         orderRepository.save(order);
@@ -50,8 +46,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderResponse> getOrdersByUser(Long userId, String bearerToken) {
-        userDirectoryClient.getUserById(userId, bearerToken);
+    public List<OrderResponse> getOrdersByUser(Long userId) {
+        validateUserAccess(userId);
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::toResponse).toList();
     }
 
@@ -84,5 +80,16 @@ public class OrderServiceImpl implements OrderService {
                 .type(o.getType()).quantity(o.getQuantity()).price(o.getPrice())
                 .totalAmount(o.getTotalAmount()).status(o.getStatus())
                 .createdAt(o.getCreatedAt()).updatedAt(o.getUpdatedAt()).build();
+    }
+
+    private JwtUser validateUserAccess(Long userId) {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUser jwtUser)) {
+            throw new org.springframework.security.access.AccessDeniedException("Access Denied");
+        }
+        if (!userId.equals(jwtUser.id())) {
+            throw new org.springframework.security.access.AccessDeniedException("Access Denied");
+        }
+        return jwtUser;
     }
 }
