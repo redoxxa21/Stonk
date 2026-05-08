@@ -10,7 +10,11 @@ import java.math.BigDecimal;
 public class Wallet {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private Long userId;
 
     @Column(nullable = false, unique = true)
     private String username;

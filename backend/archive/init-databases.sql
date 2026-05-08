@@ -2,5 +2,5 @@ CREATE DATABASE auth_db;
 CREATE DATABASE user_db;
 CREATE DATABASE wallet_db;
 CREATE DATABASE market_db;
-CREATE DATABASE order_db;
+CREATE DATABASE audit_db;
 CREATE DATABASE portfolio_db;

@@ -19,4 +19,7 @@ public class StockResponse {
     private BigDecimal previousClose;
     private BigDecimal changePercent;
     private LocalDateTime lastUpdated;
+    private long cumulativeVolume;
+    private BigDecimal realizedVolatility;
+    private BigDecimal liquidityScore;
 }

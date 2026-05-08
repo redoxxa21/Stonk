@@ -18,6 +18,3 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-service:
-  user:
-    base-url: ${SERVICE_USER_URL:http://user-service:2700}

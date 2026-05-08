@@ -24,6 +24,17 @@ spring:
       auto-registration:
         enabled: ${SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED:false}
 
+  kafka:
+    bootstrap-servers: ${KAFKA_URL:localhost:9092}
+    consumer:
+      group-id: ${spring.application.name}-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      missing-topics-fatal: false
+
 eureka:
   client:
     service-url:
@@ -42,7 +53,3 @@ management:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY:mysecretkeymysecretkeymysecretkey12}
-
-market:
-  price-update-interval-ms: ${MARKET_PRICE_UPDATE_INTERVAL_MS:30000}
-  max-fluctuation-percent: ${MARKET_MAX_FLUCTUATION_PERCENT:2.0}

@@ -70,28 +70,6 @@ services:
       kafka:
         condition: service_started
 
-  user-service:
-    build:
-      context: ./user-service
-    container_name: stonks-user
-    environment:
-      - DB_URL=jdbc:postgresql://stonks-postgres:5432/user_db
-      - DB_USERNAME=stonks
-      - DB_PASSWORD=stonks123
-      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
-      - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
-      - EUREKA_FETCH_REGISTRY=true
-      - EUREKA_REGISTER_WITH_EUREKA=true
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    depends_on:
-      postgres:
-        condition: service_healthy
-      eureka-server:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-
   wallet-service:
     build:
       context: ./wallet-service
@@ -105,7 +83,6 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
-      - USER_SERVICE_URL=http://stonks-user:2700
       - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
@@ -128,30 +105,42 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
+      - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
 
   order-service:
     build:
       context: ./order-service
     container_name: stonks-order
     environment:
-      - DB_URL=jdbc:postgresql://stonks-postgres:5432/order_db
-      - DB_USERNAME=stonks
-      - DB_PASSWORD=stonks123
-      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
-      - USER_SERVICE_URL=http://stonks-user:2700
       - KAFKA_URL=kafka:9092
     depends_on:
-      postgres:
+      eureka-server:
         condition: service_healthy
+      kafka:
+        condition: service_started
+
+  market-simulation-service:
+    build:
+      context: ./market-simulation-service
+    container_name: stonks-market-sim
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
+      - EUREKA_FETCH_REGISTRY=true
+      - EUREKA_REGISTER_WITH_EUREKA=true
+      - KAFKA_URL=kafka:9092
+    depends_on:
       eureka-server:
         condition: service_healthy
       kafka:
@@ -170,7 +159,6 @@ services:
       - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
       - EUREKA_FETCH_REGISTRY=true
       - EUREKA_REGISTER_WITH_EUREKA=true
-      - USER_SERVICE_URL=http://stonks-user:2700
       - KAFKA_URL=kafka:9092
     depends_on:
       postgres:
@@ -186,6 +174,28 @@ services:
     container_name: stonks-trading
     environment:
       - DB_URL=jdbc:postgresql://stonks-postgres:5432/trading_db
+      - DB_USERNAME=stonks
+      - DB_PASSWORD=stonks123
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED=true
+      - EUREKA_FETCH_REGISTRY=true
+      - EUREKA_REGISTER_WITH_EUREKA=true
+      - KAFKA_URL=kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  audit-log-service:
+    build:
+      context: ./audit-log-service
+    container_name: stonks-audit-log
+    environment:
+      - DB_URL=jdbc:postgresql://stonks-postgres:5432/audit_db
       - DB_USERNAME=stonks
       - DB_PASSWORD=stonks123
       - DB_DRIVER_CLASS_NAME=org.postgresql.Driver

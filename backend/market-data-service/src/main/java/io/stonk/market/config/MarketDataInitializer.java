@@ -62,6 +62,9 @@ public class MarketDataInitializer implements CommandLineRunner {
                 .previousClose(p)
                 .changePercent(BigDecimal.ZERO)
                 .lastUpdated(LocalDateTime.now())
+                .cumulativeVolume(0L)
+                .realizedVolatility(BigDecimal.ZERO)
+                .liquidityScore(BigDecimal.valueOf(1000))
                 .build();
     }
 }

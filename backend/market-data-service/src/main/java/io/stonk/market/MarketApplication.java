@@ -2,17 +2,16 @@ package io.stonk.market;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.kafka.annotation.EnableKafka;
 
 /**
  * Market Data Service — provides real-time simulated stock prices.
  *
- * <p>On startup, seeds 10 well-known stock symbols with initial prices.
- * A scheduled task updates all prices every {@code market.price-update-interval-ms}
- * milliseconds (default 30 s) with a configurable random fluctuation.
+ * <p>On startup, seeds 10 well-known stock symbols with reference prices.
+ * Prices move only when the exchange emits {@code trade-executed} events.
  */
 @SpringBootApplication
-@EnableScheduling
+@EnableKafka
 public class MarketApplication {
 
     public static void main(String[] args) {

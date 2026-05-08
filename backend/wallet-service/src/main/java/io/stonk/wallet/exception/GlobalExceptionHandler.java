@@ -3,8 +3,11 @@ package io.stonk.wallet.exception;
 import io.stonk.wallet.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +41,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserServiceUnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUserServiceUnauthorized(UserServiceUnauthorizedException ex, HttpServletRequest req) {
         return build(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthenticated(AuthenticationCredentialsNotFoundException ex, HttpServletRequest req) {
+        return build(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(AccessDeniedException ex, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
+        String msg = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (msg != null && msg.toLowerCase().contains("duplicate key")) {
+            return build(HttpStatus.CONFLICT, "Conflict", "Wallet already exists for this user", req);
+        }
+        return build(HttpStatus.BAD_REQUEST, "Bad Request", "Invalid data operation", req);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

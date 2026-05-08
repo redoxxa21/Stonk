@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 /**
  * Represents a stock listed in the simulated market.
  *
- * <p>The {@code symbol} is the primary key (e.g. {@code "AAPL"}).
- * Prices are updated periodically by {@link io.stonk.market.scheduler.PriceUpdateScheduler}.
+ * <p>Prices move only when {@link io.stonk.market.kafka.TradeExecutedConsumer}
+ * applies exchange executions (no synthetic random walk).
  */
 @Entity
 @Table(name = "stocks")
@@ -40,4 +40,16 @@ public class Stock {
 
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
+
+    /** Running share volume in the simulation (sum of executed sizes). */
+    @Column(nullable = false)
+    private long cumulativeVolume;
+
+    /** Simple annualized volatility proxy from recent returns (simulation metric). */
+    @Column(nullable = false, precision = 12, scale = 6)
+    private BigDecimal realizedVolatility;
+
+    /** Higher is calmer (more volume per unit vol); derived for bots. */
+    @Column(nullable = false, precision = 14, scale = 6)
+    private BigDecimal liquidityScore;
 }

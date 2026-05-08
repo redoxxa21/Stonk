@@ -52,16 +52,27 @@ if ($portfolio.Count -gt 0) {
     Write-Host "  EMPTY - Saga may not have completed!" -ForegroundColor Red
 }
 
-# 8. Check orders
-Write-Host "`n[8/8] Checking orders..." -ForegroundColor Yellow
-$orders = Invoke-RestMethod -Uri "$baseUrl/orders/$userId" -Method Get -Headers $headers
-if ($orders.Count -gt 0) {
-    foreach ($o in $orders) {
-        Write-Host "  Order #$($o.id): type=$($o.type), symbol=$($o.symbol), qty=$($o.quantity), status=$($o.status)" -ForegroundColor Green
+# 8. Check audit log (auth → user-registration, trading → trade-initiated / trade-completed)
+Write-Host "`n[8/8] Checking audit events (auth + trading topics)..." -ForegroundColor Yellow
+function Show-AuditTopic($topicLabel, $topicParam) {
+    try {
+        $audit = Invoke-RestMethod -Uri "$baseUrl/audit/events?topic=$topicParam&size=20" -Method Get -Headers $headers
+        $content = $audit.content
+        if ($content -and $content.Count -gt 0) {
+            Write-Host "  --- $topicLabel ($topicParam) ---" -ForegroundColor Cyan
+            foreach ($e in $content) {
+                Write-Host "    key=$($e.messageKey) at $($e.receivedAt)" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "  No rows for $topicParam yet." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "  Audit query failed for ${topicParam}: $_" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "  EMPTY - Order saga listener may not have completed!" -ForegroundColor Red
 }
+Show-AuditTopic "Registration" "user-registration"
+Show-AuditTopic "Trade initiated" "trade-initiated"
+Show-AuditTopic "Trade completed" "trade-completed"
 
 # 9. Check wallet balance after trade
 Write-Host "`n[BONUS] Checking wallet balance after BUY..." -ForegroundColor Yellow

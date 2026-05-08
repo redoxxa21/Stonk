@@ -9,14 +9,17 @@ import io.stonk.trading.dto.TradeResponse;
 import io.stonk.trading.entity.Trade;
 import io.stonk.trading.entity.TradeStatus;
 import io.stonk.trading.entity.TradeType;
-import io.stonk.trading.exception.TradeExecutionException;
+import io.stonk.trading.kafka.TradingDomainTopics;
 import io.stonk.trading.exception.TradeNotFoundException;
+import io.stonk.trading.exception.TradeExecutionException;
 import io.stonk.trading.repository.TradeRepository;
 import io.stonk.trading.service.TradingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -71,8 +74,8 @@ public class TradingServiceImpl implements TradingService {
                     .type(TradeType.BUY)
                     .totalAmount(totalCost)
                     .build();
-            
-            kafkaTemplate.send("trade-initiated", event);
+
+            publishTradeInitiatedAfterCommit(trade.getId(), event);
             log.info("Saga Initiated - BUY trade #{} pending", trade.getId());
             return toResponse(trade);
 
@@ -114,8 +117,8 @@ public class TradingServiceImpl implements TradingService {
                     .type(TradeType.SELL)
                     .totalAmount(totalProceeds)
                     .build();
-            
-            kafkaTemplate.send("trade-initiated", event);
+
+            publishTradeInitiatedAfterCommit(trade.getId(), event);
             log.info("Saga Initiated - SELL trade #{} pending", trade.getId());
             return toResponse(trade);
 
@@ -152,5 +155,23 @@ public class TradingServiceImpl implements TradingService {
             throw new org.springframework.security.access.AccessDeniedException("Access Denied");
         }
         return jwtUser;
+    }
+
+    private void publishTradeInitiatedAfterCommit(Long tradeId, io.stonk.trading.event.TradeInitiatedEvent event) {
+        runAfterCommit(() ->
+                kafkaTemplate.send(TradingDomainTopics.TRADE_INITIATED, String.valueOf(tradeId), event));
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 }

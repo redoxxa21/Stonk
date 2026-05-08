@@ -18,5 +18,3 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
 
-wallet:
-  user-service-base-url: ${USER_SERVICE_URL:http://user-service:2700}

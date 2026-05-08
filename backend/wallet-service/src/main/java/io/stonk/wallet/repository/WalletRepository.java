@@ -5,4 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface WalletRepository extends JpaRepository<Wallet, Long> {}
+public interface WalletRepository extends JpaRepository<Wallet, Long> {
+    boolean existsByUserId(Long userId);
+    java.util.Optional<Wallet> findByUserId(Long userId);
+}

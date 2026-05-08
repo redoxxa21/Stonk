@@ -56,8 +56,3 @@ management:
 jwt:
   secret-key: ${JWT_SECRET_KEY:mysecretkeymysecretkeymysecretkey12}
 
-portfolio:
-  user-service-base-url: ${USER_SERVICE_URL:http://localhost:2700}
-
-
-

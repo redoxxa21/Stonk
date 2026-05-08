@@ -1,22 +1,26 @@
 package io.stonk.auth.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stonk.auth.dto.AuthResponse;
 import io.stonk.auth.dto.LoginRequest;
 import io.stonk.auth.dto.RegisterRequest;
+import io.stonk.auth.dto.UserRegisteredEvent;
 import io.stonk.auth.entity.Role;
 import io.stonk.auth.entity.User;
 import io.stonk.auth.exception.InvalidCredentialsException;
 import io.stonk.auth.exception.UserAlreadyExistsException;
+import io.stonk.auth.kafka.AuthDomainTopics;
 import io.stonk.auth.repository.UserRepository;
 import io.stonk.auth.security.JwtService;
 import io.stonk.auth.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.stonk.auth.dto.UserRegisteredEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Default implementation of {@link AuthService}.
@@ -81,19 +85,8 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
         log.info("New user registered: '{}' with role {}", user.getUsername(), role);
 
-        try {
-            UserRegisteredEvent event = UserRegisteredEvent.builder()
-                    .id(user.getId())
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .role(user.getRole())
-                    .build();
-            String eventJson = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("user-registration", eventJson);
-            log.debug("Published UserRegisteredEvent to Kafka for {}", user.getUsername());
-        } catch (Exception e) {
-            log.error("Failed to publish UserRegisteredEvent to Kafka for {}", user.getUsername(), e);
-        }
+        User committedUser = user;
+        runAfterCommit(() -> publishUserRegistered(committedUser));
 
         String token = jwtService.generateToken(user);
 
@@ -145,6 +138,36 @@ public class AuthServiceImpl implements AuthService {
     // ────────────────────────────────────────────────
     // Private helpers
     // ────────────────────────────────────────────────
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
+    }
+
+    private void publishUserRegistered(User user) {
+        UserRegisteredEvent event = UserRegisteredEvent.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();
+        try {
+            String json = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(AuthDomainTopics.USER_REGISTRATION, String.valueOf(user.getId()), json);
+        } catch (JsonProcessingException ex) {
+            log.warn("Could not serialize user-registration event for user {}: {}", user.getId(), ex.getMessage());
+        } catch (Exception ex) {
+            log.warn("Could not publish user-registration event for user {}: {}", user.getId(), ex.getMessage());
+        }
+    }
 
     /**
      * Resolves the requested role string to a {@link Role} enum value.

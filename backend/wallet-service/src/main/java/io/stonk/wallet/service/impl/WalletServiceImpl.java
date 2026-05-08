@@ -14,6 +14,8 @@ import io.stonk.wallet.repository.WalletRepository;
 import io.stonk.wallet.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,11 +46,11 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public WalletResponse createWallet(Long userId) {
         JwtUser user = validateUserAccess(userId);
-        if (walletRepository.existsById(userId)) {
+        if (walletRepository.existsByUserId(userId)) {
             throw new WalletAlreadyExistsException(userId);
         }
         Wallet wallet = Wallet.builder()
-                .id(user.id())
+                .userId(user.id())
                 .username(user.username())
                 .balance(defaultBalance)
                 .currency(defaultCurrency)
@@ -119,7 +121,7 @@ public class WalletServiceImpl implements WalletService {
     // ── Helpers ──
 
     private Wallet findByUserId(Long userId) {
-        return walletRepository.findById(userId).orElseThrow(() -> new WalletNotFoundException(userId));
+        return walletRepository.findByUserId(userId).orElseThrow(() -> new WalletNotFoundException(userId));
     }
 
     private void ensureFunds(Wallet wallet, BigDecimal amount) {
@@ -133,7 +135,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private WalletResponse toResponse(Wallet w) {
-        return WalletResponse.builder().id(w.getId()).username(w.getUsername())
+        return WalletResponse.builder().id(w.getId()).userId(w.getUserId()).username(w.getUsername())
                 .balance(w.getBalance()).currency(w.getCurrency()).build();
     }
 
@@ -146,10 +148,10 @@ public class WalletServiceImpl implements WalletService {
     private JwtUser validateUserAccess(Long userId) {
         org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof JwtUser jwtUser)) {
-            throw new io.stonk.wallet.exception.WalletNotFoundException(userId); // Or a specific access denied exception
+            throw new AuthenticationCredentialsNotFoundException("Authentication required");
         }
         if (!userId.equals(jwtUser.id())) {
-            throw new io.stonk.wallet.exception.WalletNotFoundException(userId);
+            throw new AccessDeniedException("You can only access your own wallet");
         }
         return jwtUser;
     }

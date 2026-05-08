@@ -4,6 +4,7 @@ import io.stonk.trading.entity.Trade;
 import io.stonk.trading.entity.TradeStatus;
 import io.stonk.trading.entity.TradeType;
 import io.stonk.trading.event.*;
+import io.stonk.trading.kafka.TradingDomainTopics;
 import io.stonk.trading.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class TradeSagaListener {
                 .price(trade.getPrice())
                 .type(trade.getType())
                 .build();
-        kafkaTemplate.send("trade-completed", completedEvent);
+        kafkaTemplate.send(TradingDomainTopics.TRADE_COMPLETED, completedEvent);
     }
 
     @KafkaListener(topics = "portfolio-failed", groupId = "${spring.application.name}-group")
@@ -115,6 +116,6 @@ public class TradeSagaListener {
                 .price(trade.getPrice())
                 .type(trade.getType())
                 .build();
-        kafkaTemplate.send("trade-completed", completedEvent);
+        kafkaTemplate.send(TradingDomainTopics.TRADE_COMPLETED, completedEvent);
     }
 }

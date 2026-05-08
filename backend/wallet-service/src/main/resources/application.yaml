@@ -57,6 +57,3 @@ jwt:
 wallet:
   default-currency: ${WALLET_DEFAULT_CURRENCY:USD}
   default-balance: ${WALLET_DEFAULT_BALANCE:0.00}
-  user-service-base-url: ${USER_SERVICE_URL:http://localhost:2700}
-
-

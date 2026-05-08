@@ -19,5 +19,4 @@ eureka:
     register-with-eureka: true
 
 portfolio:
-  user-service-base-url: ${USER_SERVICE_URL:http://user-service:2700}
   wallet-service-base-url: ${WALLET_SERVICE_URL:http://wallet-service:2500}

@@ -15,9 +15,8 @@ spring:
           uri: lb://auth-service
           predicates:
             - Path=/auth/**
-
-        - id: user-service
-          uri: lb://user-service
+        - id: auth-service-users
+          uri: lb://auth-service
           predicates:
             - Path=/users/**
 
@@ -36,10 +35,15 @@ spring:
           predicates:
             - Path=/portfolio/**
 
+        - id: audit-log-service
+          uri: lb://audit-log-service
+          predicates:
+            - Path=/audit/**
+
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/orders/**
+            - Path=/exchange/**
 
         - id: market-data-service
           uri: lb://market-data-service
@@ -71,3 +75,4 @@ gateway:
     - /auth/login
     - /actuator/health
     - /actuator/info
+    - /exchange/**
