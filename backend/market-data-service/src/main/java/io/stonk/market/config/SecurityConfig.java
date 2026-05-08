@@ -29,6 +29,7 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/ws-market/**").permitAll()
                 .requestMatchers("/market/**").authenticated()
                 .anyRequest().denyAll()
             )

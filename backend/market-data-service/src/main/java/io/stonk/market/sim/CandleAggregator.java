@@ -22,4 +22,9 @@ public class CandleAggregator {
             return existing;
         });
     }
+
+    /** Returns the current candle for the given symbol, or null if none exists. */
+    public MinuteCandle currentCandle(String symbol) {
+        return current.get(symbol);
+    }
 }

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: io.stonk.order.OrderApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 21.95 s -- in io.stonk.order.OrderApplicationTests

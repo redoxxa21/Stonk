@@ -31,6 +31,7 @@ public class TradeExecutionProcessor {
     private final ReturnVolatilityTracker volatilityTracker;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final MarketBroadcastService marketBroadcastService;
 
     @Transactional
     public void applyExecution(TradeExecutedEvent trade) {
@@ -83,6 +84,16 @@ public class TradeExecutionProcessor {
             kafkaTemplate.send(MarketKafkaTopics.MARKET_PRICE_UPDATED, sym, objectMapper.writeValueAsString(evt));
         } catch (Exception e) {
             log.warn("Failed to publish market-price-updated: {}", e.getMessage());
+        }
+
+        // ── WebSocket broadcast (non-blocking, fire-and-forget) ──
+        try {
+            marketBroadcastService.broadcastStockPrice(sym, stock);
+            marketBroadcastService.broadcastCandle(sym, candle);
+            marketBroadcastService.broadcastOrderBook(sym, trade.getPrice(), trade.getQuantity());
+            marketBroadcastService.broadcastMarketOverview();
+        } catch (Exception e) {
+            log.warn("WebSocket broadcast failed for {}: {}", sym, e.getMessage());
         }
     }
 }

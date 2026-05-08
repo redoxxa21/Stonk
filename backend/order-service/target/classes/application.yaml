@@ -1,0 +1,36 @@
+server:
+  port: ${SERVER_PORT:2670}
+
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: ${KAFKA_URL:localhost:9092}
+    consumer:
+      group-id: ${spring.application.name}-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      missing-topics-fatal: false
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: ${SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED:false}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:false}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:false}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info

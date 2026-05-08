@@ -45,6 +45,11 @@ spring:
           predicates:
             - Path=/exchange/**
 
+        - id: market-data-ws
+          uri: lb:ws://market-data-service
+          predicates:
+            - Path=/ws-market/**
+
         - id: market-data-service
           uri: lb://market-data-service
           predicates:
@@ -76,3 +81,4 @@ gateway:
     - /actuator/health
     - /actuator/info
     - /exchange/**
+    - /ws-market/**
