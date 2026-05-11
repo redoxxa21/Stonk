@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePlatform } from '../context/PlatformContext';
+import { marketSocket } from '../lib/marketSocket';
 
 export function useLiveStock(symbol) {
   const { loadSymbol, history, trackPrice } = usePlatform();
@@ -30,12 +31,30 @@ export function useLiveStock(symbol) {
 
     sync();
     const timer = setInterval(sync, 10000);
+    const unsubscribe = marketSocket.subscribe(`/topic/stocks/${symbol}`, (message) => {
+      if (!alive) return;
+      setStock((current) => {
+        const next = {
+          ...(current || {}),
+          symbol,
+          currentPrice: message.price,
+          changePercent: message.changePercent,
+          cumulativeVolume: message.volume,
+          realizedVolatility: message.realizedVolatility,
+          liquidityScore: message.liquidityScore,
+          lastUpdated: message.timestamp ? new Date(message.timestamp).toISOString() : new Date().toISOString(),
+        };
+        return next;
+      });
+      trackPrice(symbol, message.price);
+    });
 
     return () => {
       alive = false;
       clearInterval(timer);
+      unsubscribe();
     };
-  }, [symbol]);
+  }, [symbol, loadSymbol, trackPrice]);
 
   return {
     stock,

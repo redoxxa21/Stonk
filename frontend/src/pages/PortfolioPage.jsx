@@ -52,8 +52,16 @@ export default function PortfolioPage() {
     <div className="space-y-6">
       <PageHeader
         title="Portfolio"
-        subtitle="Owned assets and profit/loss are computed from current market data."
+        subtitle="Review your holdings, current value, and unrealized performance."
       />
+
+      <SectionCard title="Portfolio summary" subtitle="A quick view of your current position performance.">
+        <div className="grid gap-3 md:grid-cols-3 text-sm text-muted">
+          <div className="rh-panel-subtle p-4">Invested capital reflects the total amount committed to your current positions.</div>
+          <div className="rh-panel-subtle p-4">Current value updates with the latest available market prices.</div>
+          <div className="rh-panel-subtle p-4">Unrealized P/L highlights how your holdings are performing right now.</div>
+        </div>
+      </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Invested capital" value={summary.invested} note="Cost basis" tone="warning" />
@@ -61,7 +69,7 @@ export default function PortfolioPage() {
         <StatCard label="Unrealized P/L" value={`${summary.pnl >= 0 ? '+' : ''}${formatMoney(summary.pnl)}`} note={summary.pnl >= 0 ? 'Gain' : 'Loss'} tone={summary.pnl >= 0 ? 'success' : 'danger'} />
       </div>
 
-      <SectionCard title="Holdings" subtitle="Live P/L is calculated from the market service.">
+      <SectionCard title="Holdings" subtitle="A detailed view of your active portfolio positions.">
         <DataTable
           rowKey={(row) => `${row.id}-${row.symbol}`}
           rows={holdings.map((holding) => {

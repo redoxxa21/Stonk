@@ -3,7 +3,6 @@ import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatCard from '../components/common/StatCard';
 import DataTable from '../components/common/DataTable';
-import Badge from '../components/common/Badge';
 import { LoadingState, ErrorState } from '../components/common/AsyncState';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../lib/apiClient';
@@ -70,19 +69,23 @@ export default function WalletPage() {
     <div className="space-y-6">
       <PageHeader
         title="Wallet"
-        subtitle="Balance, funding operations, and transaction history from wallet-service."
+        subtitle="Manage your balance, funding activity, and recent transactions."
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Balance" value={total} note={wallet?.currency || 'USD'} tone="success" />
-        <StatCard label="Transactions" value={transactions.length} note="History" tone="accent" />
-        <StatCard label="User ID" value={wallet?.id ?? user?.id ?? '-'} note="Owner" tone="neutral" />
+        <StatCard label="Transactions" value={transactions.length} note="History" tone="accent" format="plain" />
+        <StatCard label="User ID" value={wallet?.id ?? user?.id ?? '-'} note="Owner" tone="neutral" format="plain" />
         <StatCard label="Username" value={wallet?.username ?? user?.username ?? '-'} note="Owner" tone="warning" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-        <SectionCard title="Balance controls" subtitle="Create, deposit, withdraw, debit, and credit.">
+        <SectionCard title="Balance controls" subtitle="Create a wallet and manage available funds.">
           <div className="space-y-4">
+            {error ? <ErrorState error={error} /> : null}
+            <div className="rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">
+              Keep your wallet funded so you can respond quickly to market opportunities and account activity.
+            </div>
             <label className="block text-sm text-muted">
               Amount
               <input
@@ -91,33 +94,34 @@ export default function WalletPage() {
                 type="number"
                 min="0.01"
                 step="0.01"
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
               />
             </label>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => mutate('create')} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={() => mutate('create')} disabled={busy} type="button" className="rh-button-ghost">
                 Create wallet
               </button>
-              <button onClick={() => mutate('deposit')} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={() => mutate('deposit')} disabled={busy} type="button" className="rh-button-primary">
                 Deposit
               </button>
-              <button onClick={() => mutate('withdraw')} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={() => mutate('withdraw')} disabled={busy} type="button" className="rh-button-secondary">
                 Withdraw
               </button>
-              <button onClick={() => mutate('debit')} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={() => mutate('debit')} disabled={busy} type="button" className="rh-button-ghost">
                 Debit
               </button>
-              <button onClick={() => mutate('credit')} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={() => mutate('credit')} disabled={busy} type="button" className="rh-button-ghost">
                 Credit
               </button>
-              <button onClick={loadWallet} disabled={busy} type="button" className="rounded-lg border border-line bg-white/5 px-3 py-2 text-sm">
+              <button onClick={loadWallet} disabled={busy} type="button" className="rh-button-secondary">
                 Refresh
               </button>
             </div>
           </div>
         </SectionCard>
 
-        <SectionCard title="Wallet record" subtitle="Current wallet payload from the service.">
+        <SectionCard title="Wallet record" subtitle="A summary of the wallet currently linked to your account.">
+          {error ? <div className="mb-4"><ErrorState error={error} /></div> : null}
           {wallet ? (
             <DataTable
               rowKey={(row) => row.key}
@@ -134,8 +138,8 @@ export default function WalletPage() {
             />
           ) : (
             <div className="space-y-3">
-              <div className="rounded-lg border border-line bg-panel2 p-4 text-sm text-muted">No wallet exists for this user yet.</div>
-              <button onClick={() => mutate('create')} type="button" className="rounded-lg bg-gradient-to-r from-accent to-accent2 px-4 py-2.5 font-semibold text-bg">
+              <div className="rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">No wallet exists for this user yet.</div>
+              <button onClick={() => mutate('create')} type="button" className="rh-button-primary">
                 Create wallet now
               </button>
             </div>

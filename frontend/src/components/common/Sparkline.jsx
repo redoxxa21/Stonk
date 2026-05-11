@@ -2,7 +2,7 @@ import { buildSparkPath } from '../../lib/chart';
 
 export default function Sparkline({ values, className = '' }) {
   const path = buildSparkPath(values);
-  if (!values?.length) return <div className={`h-11 rounded-md bg-white/5 ${className}`} />;
+  if (!values?.length) return <div className={`h-11 rounded-md bg-[#151515] ${className}`} />;
 
   return (
     <svg viewBox="0 0 120 44" className={`h-11 w-full ${className}`} preserveAspectRatio="none">

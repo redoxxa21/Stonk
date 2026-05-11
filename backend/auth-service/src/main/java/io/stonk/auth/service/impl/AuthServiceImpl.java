@@ -25,8 +25,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /**
  * Default implementation of {@link AuthService}.
  *
- * <p>All business logic lives here — the controller is a thin HTTP adapter.
- * Constructor-based injection is used exclusively (no field injection).
+ * <p>Public registration creates standard users only. Administrative access is
+ * provisioned via startup seeding rather than open sign-up input.
  */
 @Slf4j
 @Service
@@ -51,16 +51,6 @@ public class AuthServiceImpl implements AuthService {
         this.objectMapper = objectMapper;
     }
 
-    // ────────────────────────────────────────────────
-    // Registration
-    // ────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Checks for existing username and email before persisting, then
-     * returns a JWT so the client is immediately authenticated after sign-up.
-     */
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -73,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
             throw UserAlreadyExistsException.byEmail(request.getEmail());
         }
 
-        Role role = resolveRole(request.getRole());
+        Role role = resolvePublicRegistrationRole(request.getRole());
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -99,17 +89,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    // ────────────────────────────────────────────────
-    // Login
-    // ────────────────────────────────────────────────
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Validates credentials and returns a fresh JWT. The response is
-     * deliberately identical for unknown-user and wrong-password cases to
-     * prevent username enumeration.
-     */
     @Override
     public AuthResponse login(LoginRequest request) {
         log.debug("Processing login for username: {}", request.getUsername());
@@ -134,10 +113,6 @@ public class AuthServiceImpl implements AuthService {
                 .message("Login successful")
                 .build();
     }
-
-    // ────────────────────────────────────────────────
-    // Private helpers
-    // ────────────────────────────────────────────────
 
     private void runAfterCommit(Runnable action) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -169,25 +144,10 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * Resolves the requested role string to a {@link Role} enum value.
-     *
-     * <p>Defaults to {@link Role#USER} when the role field is absent or blank.
-     * Unknown role strings fall back to {@link Role#USER} with a warning,
-     * preventing clients from accidentally escalating privileges via typos.
-     *
-     * @param roleString the raw role value from the request (may be null/blank)
-     * @return the resolved role
-     */
-    private Role resolveRole(String roleString) {
-        if (roleString == null || roleString.isBlank()) {
-            return Role.USER;
+    private Role resolvePublicRegistrationRole(String roleString) {
+        if (roleString != null && !roleString.isBlank() && !"USER".equalsIgnoreCase(roleString.trim())) {
+            log.warn("Public registration attempted role '{}' - forcing USER", roleString);
         }
-        try {
-            return Role.valueOf(roleString.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            log.warn("Unknown role '{}' requested — defaulting to USER", roleString);
-            return Role.USER;
-        }
+        return Role.USER;
     }
 }

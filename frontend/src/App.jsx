@@ -9,10 +9,10 @@ import MarketPage from './pages/MarketPage';
 import MarketSymbolPage from './pages/MarketSymbolPage';
 import WalletPage from './pages/WalletPage';
 import PortfolioPage from './pages/PortfolioPage';
-import OrdersPage from './pages/OrdersPage';
 import TradesPage from './pages/TradesPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import HelpCenterPage from './pages/HelpCenterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Shield } from 'lucide-react';
 
@@ -27,10 +27,19 @@ function RoleGate({ role, children }) {
             <Shield className="h-5 w-5 text-warning" />
             <h1 className="text-lg font-semibold">Access restricted</h1>
           </div>
-          <p className="mt-2 text-sm text-muted">This area is reserved for users with the required role.</p>
+          <p className="mt-2 text-sm text-muted">Your account does not have permission to view this area.</p>
         </div>
       </div>
     );
+  }
+  return children;
+}
+
+function UserOnly({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
   }
   return children;
 }
@@ -58,16 +67,17 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="market" element={<MarketPage />} />
-        <Route path="market/:symbol" element={<MarketSymbolPage />} />
-        <Route path="wallet" element={<WalletPage />} />
-        <Route path="portfolio" element={<PortfolioPage />} />
-        <Route path="orders" element={<OrdersPage />} />
-        <Route path="trades" element={<TradesPage />} />
-        <Route path="profile" element={<ProfilePage />} />
+        <Route index element={user?.role === 'ADMIN' ? <Navigate to="/admin" replace /> : <DashboardPage />} />
+        <Route path="market" element={<UserOnly><MarketPage /></UserOnly>} />
+        <Route path="market/:symbol" element={<UserOnly><MarketSymbolPage /></UserOnly>} />
+        <Route path="wallet" element={<UserOnly><WalletPage /></UserOnly>} />
+        <Route path="portfolio" element={<UserOnly><PortfolioPage /></UserOnly>} />
+        <Route path="orders" element={<Navigate to="/trades" replace />} />
+        <Route path="trades" element={<UserOnly><TradesPage /></UserOnly>} />
+        <Route path="profile" element={<UserOnly><ProfilePage /></UserOnly>} />
+        <Route path="help" element={<HelpCenterPage />} />
         <Route
-          path="admin"
+          path="admin/*"
           element={
             <RoleGate role="ADMIN">
               <AdminPage />

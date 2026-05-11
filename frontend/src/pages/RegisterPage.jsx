@@ -27,10 +27,13 @@ export default function RegisterPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 shadow-soft">
-          <h2 className="text-xl font-semibold">Create account</h2>
-          <p className="mt-1 text-sm text-muted">Registers through auth-service and hydrates the session immediately.</p>
+      <div className="flex items-center justify-center p-6 lg:p-10">
+        <div className="w-full max-w-md rounded-[32px] border border-line bg-[linear-gradient(180deg,rgba(16,16,16,0.98),rgba(10,10,10,0.96))] p-7 shadow-soft backdrop-blur">
+          <div className="inline-flex rounded-full border border-[#b7df43] bg-[rgba(195,245,60,0.14)] px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-accent">
+            Quick onboarding
+          </div>
+          <h2 className="mt-4 text-2xl font-semibold">Create account</h2>
+          <p className="mt-1 text-sm text-muted">Create your account to start tracking markets and managing your portfolio.</p>
 
           {error ? <div className="mt-4"><ErrorState error={error} /></div> : null}
 
@@ -40,7 +43,7 @@ export default function RegisterPage() {
               <input
                 value={form.username}
                 onChange={(e) => setForm((current) => ({ ...current, username: e.target.value }))}
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
                 required
               />
             </label>
@@ -50,7 +53,7 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
                 type="email"
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
                 required
               />
             </label>
@@ -60,25 +63,17 @@ export default function RegisterPage() {
                 value={form.password}
                 onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
                 type="password"
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
                 required
               />
             </label>
-            <label className="block text-sm text-muted">
-              Role
-              <select
-                value={form.role}
-                onChange={(e) => setForm((current) => ({ ...current, role: e.target.value }))}
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
-              >
-                <option value="USER">USER</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-            </label>
+          <div className="rounded-2xl border border-line bg-[#111111] px-3 py-3 text-sm text-muted">
+              New registrations are created as <span className="font-medium text-text">USER</span> accounts.
+          </div>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-accent to-accent2 px-4 py-2.5 font-semibold text-bg disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 font-semibold text-black shadow-glow transition hover:translate-y-[-1px] disabled:opacity-60"
             >
               {loading ? 'Creating...' : 'Register'}
               <ArrowRight className="h-4 w-4" />
@@ -91,12 +86,12 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="hidden border-l border-line bg-[radial-gradient(circle_at_top,_rgba(96,165,250,0.14),_transparent_42%),linear-gradient(180deg,_#08111f,_#0f1728)] lg:flex lg:flex-col lg:justify-between lg:p-10">
+      <div className="hidden border-l border-line bg-[radial-gradient(circle_at_top_right,_rgba(195,245,60,0.08),_transparent_18%),linear-gradient(180deg,_#080808,_#101010)] lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div>
           <div className="text-sm uppercase tracking-[0.28em] text-muted">Stonks Platform</div>
-          <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">A single trading surface for the entire backend.</h1>
+          <h1 className="mt-6 max-w-xl text-5xl font-semibold leading-tight text-text">Join the market with a setup flow that feels like a real finance product.</h1>
           <p className="mt-4 max-w-lg text-sm text-muted">
-            The user profile, wallet, portfolio, orders, trades, and market view all bind to backend microservices through the gateway.
+            Create your account and step into a streamlined experience for trading, funding, and portfolio tracking.
           </p>
         </div>
       </div>

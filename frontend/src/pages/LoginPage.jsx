@@ -28,25 +28,29 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="hidden border-r border-line bg-[radial-gradient(circle_at_top,_rgba(94,234,212,0.14),_transparent_42%),linear-gradient(180deg,_#08111f,_#0f1728)] lg:flex lg:flex-col lg:justify-between lg:p-10">
+      <div className="hidden border-r border-line bg-[linear-gradient(180deg,#050505,#0b0b0b)] text-white lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div>
-          <div className="flex items-center gap-3 text-sm uppercase tracking-[0.28em] text-muted">
+          <div className="flex items-center gap-3 text-sm uppercase tracking-[0.28em] text-white/60">
             <ShieldCheck className="h-5 w-5 text-accent" />
             Stonks Platform
           </div>
-          <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">Trade, manage, and monitor the platform from one console.</h1>
-          <p className="mt-4 max-w-lg text-sm text-muted">
-            This frontend is wired to the API Gateway and all microservices. Auth, users, wallet, portfolio, orders, trades, and market data are
-            loaded dynamically from the backend.
+          <h1 className="mt-6 max-w-xl text-5xl font-semibold leading-tight text-white">Invest, track, and trade in one focused workspace.</h1>
+          <p className="mt-4 max-w-lg text-sm text-white/72">
+            Access live market tools, portfolio insights, funding controls, and account management from a single secure platform.
           </p>
         </div>
-        <div className="text-sm text-muted">API Gateway first. No mock business logic.</div>
+        <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm text-white/72 backdrop-blur">
+          Designed for fast decisions, clear visibility, and secure access.
+        </div>
       </div>
 
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-lg border border-line bg-panel p-6 shadow-soft">
-          <h2 className="text-xl font-semibold">Sign in</h2>
-          <p className="mt-1 text-sm text-muted">Use your auth-service account to unlock the platform.</p>
+      <div className="flex items-center justify-center p-6 lg:p-10">
+        <div className="w-full max-w-md rounded-[32px] border border-line bg-[linear-gradient(180deg,rgba(16,16,16,0.98),rgba(10,10,10,0.96))] p-7 shadow-soft backdrop-blur">
+          <div className="inline-flex rounded-full border border-[#b7df43] bg-[rgba(195,245,60,0.14)] px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-accent">
+            Secure access
+          </div>
+          <h2 className="mt-4 text-2xl font-semibold">Sign in</h2>
+          <p className="mt-1 text-sm text-muted">Sign in to access your trading workspace.</p>
 
           {error ? <div className="mt-4"><ErrorState error={error} /></div> : null}
 
@@ -56,7 +60,7 @@ export default function LoginPage() {
               <input
                 value={form.username}
                 onChange={(e) => setForm((current) => ({ ...current, username: e.target.value }))}
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
                 required
               />
             </label>
@@ -66,14 +70,14 @@ export default function LoginPage() {
                 value={form.password}
                 onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
                 type="password"
-                className="mt-2 w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-text outline-none focus:border-accent"
+                className="rh-input"
                 required
               />
             </label>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-accent to-accent2 px-4 py-2.5 font-semibold text-bg disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 font-semibold text-black shadow-glow transition hover:translate-y-[-1px] disabled:opacity-60"
             >
               {loading ? 'Signing in...' : 'Open session'}
               <ArrowRight className="h-4 w-4" />

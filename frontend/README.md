@@ -10,6 +10,7 @@ npm run dev
 ```
 
 Default gateway target is `http://localhost:8080` via Vite proxy.
+By default, the proxy targets `http://localhost:8081` to match this repo's Docker Compose gateway mapping, and it rewrites `/api/*` requests to `/*` before forwarding.
 
 ## Archived prototype
 

@@ -6,9 +6,9 @@ export default function DataTable({ columns, rows, rowKey, emptyTitle = 'No reco
   }
 
   return (
-    <div className="overflow-auto rounded-lg border border-line">
+    <div className="app-elevated-card overflow-auto rounded-3xl border border-line shadow-sm">
       <table className="min-w-full divide-y divide-line text-sm">
-        <thead className="bg-white/5 text-left text-xs uppercase tracking-wide text-muted">
+        <thead className="app-table-head text-left text-[11px] uppercase tracking-[0.18em] text-muted">
           <tr>
             {columns.map((column) => (
               <th key={column.key} className="px-4 py-3 font-medium">
@@ -17,9 +17,9 @@ export default function DataTable({ columns, rows, rowKey, emptyTitle = 'No reco
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-line bg-panel">
+        <tbody className="divide-y divide-line bg-transparent">
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="hover:bg-white/[0.02]">
+            <tr key={rowKey(row)} className="hover:bg-[rgba(195,245,60,0.08)]">
               {columns.map((column) => (
                 <td key={column.key} className="px-4 py-3 align-top text-text">
                   {column.render ? column.render(row) : row[column.key] ?? '-'}

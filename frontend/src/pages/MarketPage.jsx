@@ -11,7 +11,7 @@ import { formatMoney, deltaClass } from '../lib/format';
 
 export default function MarketPage() {
   const navigate = useNavigate();
-  const { stocks, history, refreshMarket, marketLoading, marketError, setSelectedSymbol } = usePlatform();
+  const { stocks, history, overview, marketEvents, socketStatus, refreshMarket, marketLoading, marketError, setSelectedSymbol } = usePlatform();
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -27,20 +27,56 @@ export default function MarketPage() {
     <div className="space-y-6">
       <PageHeader
         title="Market"
-        subtitle="Live catalog from market-data-service. Select any symbol to open the detail view and start live sampling."
+        subtitle="Follow live symbols, review movement, and open detailed market views."
         actions={[
-          <button key="refresh" type="button" onClick={refreshMarket} className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-sm">
+          <Badge key="feed" tone={socketStatus === 'connected' ? 'success' : socketStatus === 'connecting' ? 'warning' : 'neutral'}>
+            Live {socketStatus}
+          </Badge>,
+          <button key="refresh" type="button" onClick={refreshMarket} className="rh-button-primary">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </button>,
         ]}
       />
 
+      <div className="grid gap-4 xl:grid-cols-3">
+        <SectionCard title="Market state" subtitle="A snapshot of the current trading session.">
+          <div className="text-3xl font-semibold text-text">{overview?.marketStatus || 'LIVE'}</div>
+          <div className="mt-2 text-sm text-muted">Top level status for the trading session.</div>
+        </SectionCard>
+        <SectionCard title="Top gainers" subtitle="Fast movers in the current overview.">
+          <div className="space-y-3">
+            {(overview?.topGainers || []).slice(0, 3).map((item) => (
+              <div key={item.symbol} className="flex items-center justify-between rounded-2xl border border-line bg-panel2 px-3 py-3">
+                <div>
+                  <div className="font-medium text-text">{item.symbol}</div>
+                  <div className="text-xs text-muted">{item.name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-text">{formatMoney(item.price || item.currentPrice)}</div>
+                  <div className="text-xs text-[#5f880f]">+{Number(item.changePercent || 0).toFixed(2)}%</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="Market events" subtitle="Recent updates across the market.">
+          <div className="space-y-3">
+            {marketEvents.slice(0, 3).map((event, index) => (
+              <div key={`${event.symbol || 'market'}-${event.timestamp || index}`} className="rounded-2xl border border-line bg-panel2 px-3 py-3">
+                <div className="text-sm font-medium text-text">{event.eventType || 'Market update'}</div>
+                <div className="mt-1 text-xs text-muted">{event.symbol ? `${event.symbol} • ` : ''}{event.message || 'Live market event received.'}</div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
       <SectionCard
         title="Watchlist"
         subtitle="Search the live catalog and inspect each instrument."
         actions={[
-          <div key="search" className="flex items-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-2">
+          <div key="search" className="flex items-center gap-2 rounded-2xl border border-line bg-panel2 px-3 py-2">
             <Search className="h-4 w-4 text-muted" />
             <input
               value={query}
@@ -63,7 +99,7 @@ export default function MarketPage() {
                     setSelectedSymbol(stock.symbol);
                     navigate(`/market/${stock.symbol}`);
                   }}
-                  className="rounded-lg border border-line bg-panel2 p-4 text-left transition hover:border-accent/50 hover:bg-white/[0.03]"
+                  className="rounded-[24px] border border-line bg-panel2 p-4 text-left transition hover:border-[#b7df43] hover:bg-[#1a1f0f]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>

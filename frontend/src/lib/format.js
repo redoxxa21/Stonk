@@ -27,7 +27,7 @@ export function formatDateTime(value) {
 export function deltaClass(value) {
   const n = Number(value);
   if (Number.isNaN(n)) return 'text-muted';
-  if (n > 0) return 'text-emerald-400';
+  if (n > 0) return 'text-accent';
   if (n < 0) return 'text-rose-400';
   return 'text-muted';
 }

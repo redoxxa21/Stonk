@@ -5,15 +5,18 @@ import App from './App';
 import './styles/index.css';
 import { AuthProvider } from './context/AuthContext';
 import { PlatformProvider } from './context/PlatformContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <PlatformProvider>
-          <App />
-        </PlatformProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <PlatformProvider>
+            <App />
+          </PlatformProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, WalletCards, Layers3, ListOrdered, ArrowUpDown, CandlestickChart, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, WalletCards, Layers3, ArrowUpDown, CandlestickChart, RefreshCw, Shield, CircleHelp } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import StatCard from '../components/common/StatCard';
 import SectionCard from '../components/common/SectionCard';
@@ -15,13 +15,12 @@ import { formatMoney, formatNumber, formatDateTime, deltaClass } from '../lib/fo
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const { stocks, refreshMarket } = usePlatform();
+  const { stocks, overview, marketEvents, socketStatus, refreshMarket } = usePlatform();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState({
     wallet: null,
     portfolio: [],
-    orders: [],
     trades: [],
   });
 
@@ -34,10 +33,9 @@ export default function DashboardPage() {
       setError('');
       try {
         await refreshUser();
-        const [wallet, portfolio, orders, trades] = await Promise.all([
+        const [wallet, portfolio, trades] = await Promise.all([
           apiClient.get(`/wallet/${user.id}`).catch(() => null),
           apiClient.get(`/portfolio/${user.id}`).catch(() => []),
-          apiClient.get(`/orders/${user.id}`).catch(() => []),
           apiClient.get(`/trades/${user.id}`).catch(() => []),
         ]);
 
@@ -45,7 +43,6 @@ export default function DashboardPage() {
         setSummary({
           wallet,
           portfolio: Array.isArray(portfolio) ? portfolio : [],
-          orders: Array.isArray(orders) ? orders : [],
           trades: Array.isArray(trades) ? trades : [],
         });
       } catch (err) {
@@ -78,20 +75,28 @@ export default function DashboardPage() {
   if (error) return <ErrorState error={error} onRetry={refreshMarket} />;
 
   const topStocks = stocks.slice(0, 6);
-  const latestOrders = summary.orders.slice(0, 5);
-  const latestTrades = summary.trades.slice(0, 5);
+  const latestTrades = summary.trades.slice(0, 8);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Dashboard${user?.username ? ` for ${user.username}` : ''}`}
-        subtitle="Live snapshots from auth, user, wallet, portfolio, order, trade, and market services."
+        subtitle="A live overview of your market activity, account value, and recent trading performance."
         actions={[
+          <button
+            key="help"
+            type="button"
+            onClick={() => navigate('/help')}
+            className="rh-button-secondary"
+          >
+            <CircleHelp className="h-4 w-4" />
+            Help center
+          </button>,
           <button
             key="refresh"
             type="button"
             onClick={() => refreshMarket()}
-            className="inline-flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 text-sm"
+            className="rh-button-primary"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh market
@@ -99,18 +104,63 @@ export default function DashboardPage() {
         ]}
       />
 
+      <SectionCard title="Operating picture" subtitle="What matters right now for this trading session.">
+        <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[24px] border border-line bg-[linear-gradient(180deg,rgba(18,18,18,0.98),rgba(10,10,10,0.96))] p-5 shadow-soft">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={socketStatus === 'connected' ? 'success' : socketStatus === 'connecting' ? 'warning' : 'neutral'}>
+                Live {socketStatus}
+              </Badge>
+              {user?.role === 'ADMIN' ? (
+                <Badge tone="warning">
+                  <span className="inline-flex items-center gap-1">
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin session
+                  </span>
+                </Badge>
+              ) : null}
+            </div>
+            <h2 className="mt-4 text-2xl font-semibold text-text">Trade from the live market, then verify settlement across wallet, portfolio, and trade history.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+              Stay on top of market conditions, review open exposure, and move quickly between trading, funding, and portfolio decisions.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button type="button" onClick={() => navigate('/market')} className="rh-button-primary rounded-full">
+                Open market
+              </button>
+              <button type="button" onClick={() => navigate('/trades')} className="rh-button-secondary rounded-full">
+                Review trades
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="rh-dark-panel p-4">
+              <div className="text-xs uppercase tracking-[0.22em] text-muted">Market status</div>
+              <div className="mt-2 text-2xl font-semibold">{overview?.marketStatus || 'Live'}</div>
+              <div className="mt-1 text-sm text-white/65">Current trading session</div>
+            </div>
+            <div className="rh-panel-subtle p-4">
+              <div className="text-xs uppercase tracking-[0.22em] text-muted">Recent events</div>
+              <div className="mt-2 text-2xl font-semibold text-text">{marketEvents.length}</div>
+              <div className="mt-1 text-sm text-muted">Latest market updates</div>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Wallet balance" value={summary.wallet?.balance ?? 0} note={summary.wallet?.currency || 'USD'} tone="success" />
         <StatCard label="Portfolio value" value={portfolioValue} note={summary.portfolio.length ? `${summary.portfolio.length} holdings` : 'Empty'} tone="accent" />
         <StatCard label="Invested capital" value={investedValue} note="Held cost basis" tone="warning" />
-        <StatCard label="Market listings" value={formatNumber(stocks.length)} note="Live catalog" tone="neutral" />
+        <StatCard label="Market listings" value={formatNumber(stocks.length)} note="Live catalog" tone="neutral" format="plain" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-2">
         <SectionCard
           title="Market snapshot"
-          subtitle="Live service data with current prices and previous close."
-          actions={[<button key="market" type="button" className="text-sm text-accent" onClick={() => navigate('/market')}>Open market</button>]}
+          subtitle="Current prices and previous close for selected symbols."
+          actions={[<button key="market" type="button" className="rh-button-secondary" onClick={() => navigate('/market')}>Open market</button>]}
         >
           {topStocks.length ? (
             <DataTable
@@ -128,35 +178,14 @@ export default function DashboardPage() {
               ]}
             />
           ) : (
-            <EmptyState title="No market data" description="The market service returned an empty catalog." />
+            <EmptyState title="No market data" description="Market information is not available right now." />
           )}
         </SectionCard>
 
         <SectionCard
-          title="Latest orders"
-          subtitle="Order service history for the active user."
-          actions={[<button key="orders" type="button" className="text-sm text-accent" onClick={() => navigate('/orders')}>Open orders</button>]}
-        >
-          {latestOrders.length ? (
-            <DataTable
-              rowKey={(row) => row.id}
-              rows={latestOrders}
-              columns={[
-                { key: 'symbol', header: 'Symbol' },
-                { key: 'type', header: 'Type' },
-                { key: 'status', header: 'Status', render: (row) => <Badge tone={row.status === 'COMPLETED' ? 'success' : row.status === 'CANCELLED' ? 'danger' : 'neutral'}>{row.status}</Badge> },
-                { key: 'price', header: 'Price', render: (row) => formatMoney(row.price) },
-              ]}
-            />
-          ) : (
-            <EmptyState title="No orders yet" description="Create an order to see it here." />
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Latest trades"
-          subtitle="Trade service events for the active user."
-          actions={[<button key="trades" type="button" className="text-sm text-accent" onClick={() => navigate('/trades')}>Open trades</button>]}
+          title="Recent trades"
+          subtitle="Your latest completed and pending trade activity."
+          actions={[<button key="trades" type="button" className="rh-button-secondary" onClick={() => navigate('/trades')}>Open trades</button>]}
         >
           {latestTrades.length ? (
             <DataTable
@@ -165,12 +194,17 @@ export default function DashboardPage() {
               columns={[
                 { key: 'symbol', header: 'Symbol' },
                 { key: 'type', header: 'Type' },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  render: (row) => <Badge tone={row.status === 'COMPLETED' || row.status === 'EXECUTED' ? 'success' : row.status === 'FAILED' ? 'danger' : 'neutral'}>{row.status}</Badge>,
+                },
                 { key: 'quantity', header: 'Qty' },
                 { key: 'price', header: 'Price', render: (row) => formatMoney(row.price) },
               ]}
             />
           ) : (
-            <EmptyState title="No trades yet" description="Submit a buy or sell trade to see execution history." />
+            <EmptyState title="No trades yet" description="Submit a buy or sell trade to see execution here." />
           )}
         </SectionCard>
       </div>
@@ -179,7 +213,7 @@ export default function DashboardPage() {
         <SectionCard
           title="Portfolio breakdown"
           subtitle="Current value is computed from live market data."
-          actions={[<button key="portfolio" type="button" className="text-sm text-accent" onClick={() => navigate('/portfolio')}>Open portfolio</button>]}
+          actions={[<button key="portfolio" type="button" className="rh-button-secondary" onClick={() => navigate('/portfolio')}>Open portfolio</button>]}
         >
           {summary.portfolio.length ? (
             <DataTable
@@ -193,49 +227,45 @@ export default function DashboardPage() {
               ]}
             />
           ) : (
-            <EmptyState title="No holdings" description="The portfolio service has no positions for this user." />
+            <EmptyState title="No holdings" description="No positions are currently held in this portfolio." />
           )}
         </SectionCard>
 
         <SectionCard
           title="Wallet summary"
-          subtitle="Balance and transaction flow from the wallet service."
+          subtitle="Available balance and recent account funding details."
           actions={[
-            <button key="wallet" type="button" className="text-sm text-accent" onClick={() => navigate('/wallet')}>
+            <button key="wallet" type="button" className="rh-button-secondary" onClick={() => navigate('/wallet')}>
               Open wallet
             </button>,
           ]}
         >
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-line bg-panel2 p-4">
+            <div className="rh-panel-subtle p-4">
               <div className="text-xs uppercase tracking-wide text-muted">Balance</div>
               <div className="mt-2 text-2xl font-semibold">{formatMoney(summary.wallet?.balance)}</div>
               <div className="mt-1 text-sm text-muted">{summary.wallet?.currency || 'USD'}</div>
             </div>
-            <div className="rounded-lg border border-line bg-panel2 p-4">
+            <div className="rh-panel-subtle p-4">
               <div className="text-xs uppercase tracking-wide text-muted">Last updated</div>
               <div className="mt-2 text-sm text-text">{formatDateTime(summary.wallet?.updatedAt)}</div>
               <div className="mt-1 text-sm text-muted">Live wallet state</div>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={() => navigate('/wallet')} className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
+            <button type="button" onClick={() => navigate('/wallet')} className="rh-button-ghost">
               <WalletCards className="h-4 w-4" />
               Wallet
             </button>
-            <button type="button" onClick={() => navigate('/portfolio')} className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
+            <button type="button" onClick={() => navigate('/portfolio')} className="rh-button-ghost">
               <Layers3 className="h-4 w-4" />
               Portfolio
             </button>
-            <button type="button" onClick={() => navigate('/orders')} className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
-              <ListOrdered className="h-4 w-4" />
-              Orders
-            </button>
-            <button type="button" onClick={() => navigate('/trades')} className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
+            <button type="button" onClick={() => navigate('/trades')} className="rh-button-ghost">
               <ArrowUpDown className="h-4 w-4" />
               Trades
             </button>
-            <button type="button" onClick={() => navigate('/market')} className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm">
+            <button type="button" onClick={() => navigate('/market')} className="rh-button-ghost">
               <CandlestickChart className="h-4 w-4" />
               Market
             </button>
@@ -243,10 +273,9 @@ export default function DashboardPage() {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Open positions" value={summary.portfolio.length} note="Holding count" />
-        <StatCard label="Orders tracked" value={summary.orders.length} note="Order service" />
-        <StatCard label="Trades tracked" value={summary.trades.length} note="Trading service" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <StatCard label="Open positions" value={summary.portfolio.length} note="Holding count" format="plain" />
+        <StatCard label="Trades tracked" value={summary.trades.length} note="Activity" format="plain" />
       </div>
     </div>
   );

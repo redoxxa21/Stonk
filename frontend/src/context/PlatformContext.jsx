@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../lib/apiClient';
+import { marketSocket } from '../lib/marketSocket';
 
 const PlatformContext = createContext(null);
 
@@ -7,6 +8,9 @@ export function PlatformProvider({ children }) {
   const [stocks, setStocks] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [history, setHistory] = useState({});
+  const [overview, setOverview] = useState(null);
+  const [marketEvents, setMarketEvents] = useState([]);
+  const [socketStatus, setSocketStatus] = useState('disconnected');
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState('');
 
@@ -14,8 +18,14 @@ export function PlatformProvider({ children }) {
     setMarketLoading(true);
     setMarketError('');
     try {
-      const data = await apiClient.get('/market/stocks');
+      const [data, overviewData, eventsData] = await Promise.all([
+        apiClient.get('/market/stocks'),
+        apiClient.get('/market/overview').catch(() => null),
+        apiClient.get('/market/events').catch(() => []),
+      ]);
       setStocks(Array.isArray(data) ? data : []);
+      setOverview(overviewData);
+      setMarketEvents(Array.isArray(eventsData) ? eventsData.slice(0, 8) : []);
       if (!selectedSymbol && data?.length) {
         setSelectedSymbol(data[0].symbol);
       }
@@ -49,6 +59,22 @@ export function PlatformProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    const unsubscribeStatus = marketSocket.onStatusChange(setSocketStatus);
+    const unsubscribeOverview = marketSocket.subscribe('/topic/market/overview', (message) => {
+      setOverview(message);
+    });
+    const unsubscribeEvents = marketSocket.subscribe('/topic/market/events', (message) => {
+      setMarketEvents((current) => [message, ...current].slice(0, 8));
+    });
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribeOverview();
+      unsubscribeEvents();
+    };
+  }, []);
+
+  useEffect(() => {
     let alive = true;
     refreshMarket().catch(() => {});
     const timer = setInterval(() => {
@@ -65,6 +91,9 @@ export function PlatformProvider({ children }) {
       stocks,
       selectedSymbol,
       history,
+      overview,
+      marketEvents,
+      socketStatus,
       marketLoading,
       marketError,
       refreshMarket,
@@ -72,7 +101,7 @@ export function PlatformProvider({ children }) {
       trackPrice,
       setSelectedSymbol,
     }),
-    [stocks, selectedSymbol, history, marketLoading, marketError],
+    [stocks, selectedSymbol, history, overview, marketEvents, socketStatus, marketLoading, marketError],
   );
 
   return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
