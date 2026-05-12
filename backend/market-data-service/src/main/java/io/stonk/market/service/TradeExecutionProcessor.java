@@ -57,7 +57,7 @@ public class TradeExecutionProcessor {
         BigDecimal vol = stock.getRealizedVolatility().max(BigDecimal.valueOf(0.0001));
         BigDecimal liquidity = BigDecimal.valueOf(stock.getCumulativeVolume())
                 .divide(vol, 6, RoundingMode.HALF_UP);
-        stock.setLiquidityScore(liquidity.setScale(4, RoundingMode.HALF_UP));
+        stock.setLiquidityScore(liquidity.setScale(4, RoundingMode.HALF_UP).min(new BigDecimal("99999999")));
 
         stock.setLastUpdated(LocalDateTime.ofInstant(executedAt, ZoneOffset.UTC));
 
