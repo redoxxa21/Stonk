@@ -28,7 +28,7 @@ export default function Sidebar({ mobile = false, onNavigate }) {
             Session lane
           </div>
           <div className="mt-3 text-base font-semibold text-white">{user?.username || 'Unknown user'}</div>
-          <div className="mt-1 text-sm text-white/68">Role: {user?.role || 'USER'}</div>
+          {/*<div className="mt-1 text-sm text-white/68">Role: {user?.role || 'USER'}</div>*/}
         </div>
       </div>
 

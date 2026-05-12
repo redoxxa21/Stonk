@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, ShoppingCart, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
@@ -94,7 +94,7 @@ export default function MarketSymbolPage() {
         symbol: stock.symbol,
         quantity: Number(quantity),
       });
-      setMessage(`${type} trade submitted successfully.`);
+      setMessage(`${type} trade initiated successfully.`);
     } catch (err) {
       setMessage(err.message);
     } finally {
@@ -151,14 +151,14 @@ export default function MarketSymbolPage() {
             <div className="mt-4 text-accent">
               <Sparkline values={series} />
             </div>
-            <div className="mt-4 grid gap-2 md:grid-cols-4">
-              {recent.map((point) => (
-                <div key={point.time} className="rounded-xl border border-line bg-[#1a1f0f] px-3 py-2 text-xs text-muted">
-                  <div>{new Date(point.time).toLocaleTimeString()}</div>
-                  <div className="mt-1 text-sm text-text">{formatMoney(point.price)}</div>
-                </div>
-              ))}
-            </div>
+            {/*<div className="mt-4 grid gap-2 md:grid-cols-4">*/}
+            {/*  {recent.map((point) => (*/}
+            {/*    <div key={point.time} className="rounded-xl border border-line bg-[#1a1f0f] px-3 py-2 text-xs text-muted">*/}
+            {/*      <div>{new Date(point.time).toLocaleTimeString()}</div>*/}
+            {/*      <div className="mt-1 text-sm text-text">{formatMoney(point.price)}</div>*/}
+            {/*    </div>*/}
+            {/*  ))}*/}
+            {/*</div>*/}
           </div>
         </SectionCard>
 
@@ -222,7 +222,14 @@ export default function MarketSymbolPage() {
                 You need at least {sellQuantity || 0} shares of {stock.symbol} to sell.
               </div>
             ) : null}
-            {message ? <div className="rounded-2xl border border-line bg-[#1a1f0f] px-3 py-2 text-sm text-text">{message}</div> : null}
+            {message ? (
+              <div className="rounded-2xl border border-line bg-[#1a1f0f] px-3 py-2 text-sm text-text">
+                {message} Follow up in{' '}
+                <Link to="/trades" className="underline">
+                  Trades
+                </Link>
+              </div>
+            ) : null}
           </div>
         </SectionCard>
       </div>
