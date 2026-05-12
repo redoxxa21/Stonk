@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../lib/apiClient';
 import { marketSocket } from '../lib/marketSocket';
+import { useAuth } from './AuthContext';
 
 const PlatformContext = createContext(null);
 
@@ -74,7 +75,11 @@ export function PlatformProvider({ children }) {
     };
   }, []);
 
+  const { session } = useAuth();
+
   useEffect(() => {
+    if (!session?.token) return;
+
     let alive = true;
     refreshMarket().catch(() => {});
     const timer = setInterval(() => {
@@ -84,7 +89,7 @@ export function PlatformProvider({ children }) {
       alive = false;
       clearInterval(timer);
     };
-  }, [refreshMarket]);
+  }, [refreshMarket, session?.token]);
 
   const value = useMemo(
     () => ({
