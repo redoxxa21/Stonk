@@ -5,6 +5,7 @@ import DataTable from '../components/common/DataTable';
 import Badge from '../components/common/Badge';
 import { LoadingState, ErrorState } from '../components/common/AsyncState';
 import { useAuth } from '../context/AuthContext';
+import { usePortfolioHoldings } from '../hooks/usePortfolioHoldings';
 import { apiClient } from '../lib/apiClient';
 import { formatMoney, formatDateTime } from '../lib/format';
 
@@ -15,6 +16,7 @@ export default function TradesPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ symbol: '', quantity: 1 });
   const [busy, setBusy] = useState(false);
+  const { canSell, loading: holdingsLoading } = usePortfolioHoldings();
 
   async function loadTrades() {
     if (!user?.id) return;
@@ -35,6 +37,7 @@ export default function TradesPage() {
   }, [user?.id]);
 
   async function submitTrade(type) {
+    if (type === 'SELL' && !canSell(form.symbol, form.quantity)) return;
     setBusy(true);
     setError('');
     try {
@@ -54,6 +57,8 @@ export default function TradesPage() {
 
   if (loading) return <LoadingState label="Loading trades..." />;
   if (error && !trades.length) return <ErrorState error={error} onRetry={loadTrades} />;
+
+  const sellDisabled = busy || holdingsLoading || !canSell(form.symbol, form.quantity);
 
   return (
     <div className="space-y-6">
@@ -77,11 +82,16 @@ export default function TradesPage() {
             <button disabled={busy} type="button" onClick={() => submitTrade('BUY')} className="rh-button-positive">
               Buy
             </button>
-            <button disabled={busy} type="button" onClick={() => submitTrade('SELL')} className="rh-button-danger">
+            <button disabled={sellDisabled} type="button" onClick={() => submitTrade('SELL')} className="rh-button-danger">
               Sell
             </button>
           </div>
         </div>
+        {form.symbol && !canSell(form.symbol, form.quantity) ? (
+          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+            You need at least {Number(form.quantity) || 0} shares of {form.symbol.toUpperCase()} to sell.
+          </div>
+        ) : null}
       </SectionCard>
 
       <SectionCard title="Trade history" subtitle="Realtime execution records.">

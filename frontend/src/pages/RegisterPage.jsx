@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ username: '', email: '', password: '', role: 'USER' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false)
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -62,14 +63,12 @@ export default function RegisterPage() {
               <input
                 value={form.password}
                 onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="rh-input"
                 required
               />
+              <p className='cursor-pointer' onClick={() => setShowPassword(prev => !prev)}>{showPassword ? "hide" : "show"}</p>
             </label>
-          <div className="rounded-2xl border border-line bg-[#111111] px-3 py-3 text-sm text-muted">
-              New registrations are created as <span className="font-medium text-text">USER</span> accounts.
-          </div>
             <button
               type="submit"
               disabled={loading}

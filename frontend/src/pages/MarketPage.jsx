@@ -32,10 +32,10 @@ export default function MarketPage() {
           <Badge key="feed" tone={socketStatus === 'connected' ? 'success' : socketStatus === 'connecting' ? 'warning' : 'neutral'}>
             Live {socketStatus}
           </Badge>,
-          <button key="refresh" type="button" onClick={refreshMarket} className="rh-button-primary">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </button>,
+          // <button key="refresh" type="button" onClick={refreshMarket} className="rh-button-primary">
+          //   <RefreshCw className="h-4 w-4" />
+          //   Refresh
+          // </button>,
         ]}
       />
 

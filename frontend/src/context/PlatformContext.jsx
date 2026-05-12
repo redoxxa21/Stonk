@@ -81,7 +81,7 @@ export function PlatformProvider({ children }) {
     if (!session?.token) return;
 
     let alive = true;
-    refreshMarket().catch(() => {});
+    // refreshMarket().catch(() => {});
     const timer = setInterval(() => {
       if (alive) refreshMarket().catch(() => {});
     }, 30000);

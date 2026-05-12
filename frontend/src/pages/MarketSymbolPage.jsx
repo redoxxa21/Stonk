@@ -11,6 +11,7 @@ import { LoadingState, ErrorState } from '../components/common/AsyncState';
 import { useAuth } from '../context/AuthContext';
 import { usePlatform } from '../context/PlatformContext';
 import { useLiveStock } from '../hooks/useLiveStock';
+import { usePortfolioHoldings } from '../hooks/usePortfolioHoldings';
 import { apiClient } from '../lib/apiClient';
 import { formatMoney, deltaClass } from '../lib/format';
 
@@ -20,6 +21,7 @@ export default function MarketSymbolPage() {
   const { user } = useAuth();
   const { history, socketStatus } = usePlatform();
   const { stock, loading, error } = useLiveStock(symbol);
+  const { canSell, loading: holdingsLoading } = usePortfolioHoldings();
   const [candle, setCandle] = useState(null);
   const [orderbook, setOrderbook] = useState(null);
   const [orderType, setOrderType] = useState('BUY');
@@ -105,6 +107,9 @@ export default function MarketSymbolPage() {
   if (!stock) return null;
 
   const recent = (history[symbol] || []).slice(-8).reverse();
+  const sellQuantity = Number(quantity);
+  const canSellSelectedSymbol = canSell(stock.symbol, sellQuantity);
+  const sellDisabled = submitting || holdingsLoading || !canSellSelectedSymbol;
 
   return (
     <div className="space-y-6">
@@ -162,7 +167,7 @@ export default function MarketSymbolPage() {
             <div className="rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">
               Review the latest price, choose your order details, and submit when you are ready to trade.
             </div>
-            <label className="block text-sm text-muted">
+            {/* <label className="block text-sm text-muted">
               Order type
               <select
                 value={orderType}
@@ -172,7 +177,7 @@ export default function MarketSymbolPage() {
                 <option value="BUY">BUY</option>
                 <option value="SELL">SELL</option>
               </select>
-            </label>
+            </label> */}
             <label className="block text-sm text-muted">
               Quantity
               <input
@@ -196,22 +201,27 @@ export default function MarketSymbolPage() {
               />
             </label>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={submitOrder} disabled={submitting} type="button" className="rh-button-ghost">
+              {/* <button onClick={submitOrder} disabled={submitting} type="button" className="rh-button-ghost">
                 <ShoppingCart className="h-4 w-4" />
                 Create order
-              </button>
+              </button> */}
               <button onClick={() => submitTrade('BUY')} disabled={submitting} type="button" className="rh-button-positive">
                 <ArrowUpRight className="h-4 w-4" />
                 Trade buy
               </button>
-              <button onClick={() => submitTrade('SELL')} disabled={submitting} type="button" className="rh-button-danger">
+              <button onClick={() => submitTrade('SELL')} disabled={sellDisabled} type="button" className="rh-button-danger">
                 <ArrowDownLeft className="h-4 w-4" />
                 Trade sell
               </button>
-              <button type="button" onClick={() => setOrderPrice(String(stock.currentPrice))} className="rh-button-secondary">
+              {/* <button type="button" onClick={() => setOrderPrice(String(stock.currentPrice))} className="rh-button-secondary">
                 Use live price
-              </button>
+              </button> */}
             </div>
+            {!holdingsLoading && !canSellSelectedSymbol ? (
+              <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+                You need at least {sellQuantity || 0} shares of {stock.symbol} to sell.
+              </div>
+            ) : null}
             {message ? <div className="rounded-2xl border border-line bg-[#1a1f0f] px-3 py-2 text-sm text-text">{message}</div> : null}
           </div>
         </SectionCard>

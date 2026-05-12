@@ -57,15 +57,18 @@ export default function Topbar({ onToggleSidebar, onSearch }) {
           <Badge tone={socketStatus === 'connected' ? 'success' : socketStatus === 'connecting' ? 'warning' : 'neutral'}>
             Live
           </Badge>
-          <button
+          {/* <button
             type="button"
             onClick={refreshMarket}
             className="rh-button-secondary"
           >
             <RefreshCw className={`h-4 w-4 ${marketLoading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
-          <Badge tone={user?.role === 'ADMIN' ? 'warning' : 'accent'}>{user?.role || 'USER'}</Badge>
+          </button> */}
+          {
+            user?.role === 'ADMIN' &&
+          <Badge tone={'warning'}>{user?.role || 'ADMIN'}</Badge>
+          }
           <button
             type="button"
             onClick={logout}

@@ -92,15 +92,15 @@ export default function DashboardPage() {
             <CircleHelp className="h-4 w-4" />
             Help center
           </button>,
-          <button
-            key="refresh"
-            type="button"
-            onClick={() => refreshMarket()}
-            className="rh-button-primary"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh market
-          </button>,
+          // <button
+          //   key="refresh"
+          //   type="button"
+          //   onClick={() => refreshMarket()}
+          //   className="rh-button-primary"
+          // >
+          //   <RefreshCw className="h-4 w-4" />
+          //   Refresh market
+          // </button>,
         ]}
       />
 

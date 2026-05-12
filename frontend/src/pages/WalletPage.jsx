@@ -73,41 +73,43 @@ export default function WalletPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Username" value={wallet?.username ?? user?.username ?? '-'} note="Owner" tone="warning" />
         <StatCard label="Balance" value={total} note={wallet?.currency || 'USD'} tone="success" />
         <StatCard label="Transactions" value={transactions.length} note="History" tone="accent" format="plain" />
-        <StatCard label="User ID" value={wallet?.id ?? user?.id ?? '-'} note="Owner" tone="neutral" format="plain" />
-        <StatCard label="Username" value={wallet?.username ?? user?.username ?? '-'} note="Owner" tone="warning" />
+        {/* <StatCard label="User ID" value={wallet?.id ?? user?.id ?? '-'} note="Owner" tone="neutral" format="plain" /> */}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-        <SectionCard title="Balance controls" subtitle="Create a wallet and manage available funds.">
-          <div className="space-y-4">
-            {error ? <ErrorState error={error} /> : null}
-            <div className="rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">
-              Keep your wallet funded so you can respond quickly to market opportunities and account activity.
-            </div>
-            <label className="block text-sm text-muted">
-              Amount
-              <input
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                type="number"
-                min="0.01"
-                step="0.01"
-                className="rh-input"
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => mutate('create')} disabled={busy} type="button" className="rh-button-ghost">
+        {
+          wallet &&
+          <SectionCard title="Balance controls" subtitle="Create a wallet and manage available funds.">
+            <div className="space-y-4">
+              {error ? <ErrorState error={error} /> : null}
+              <div className="rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">
+                Keep your wallet funded so you can respond quickly to market opportunities and account activity.
+              </div>
+              <label className="block text-sm text-muted">
+                Amount
+                <input
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  className="rh-input"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {/* <button onClick={() => mutate('create')} disabled={busy} type="button" className="rh-button-ghost">
                 Create wallet
-              </button>
-              <button onClick={() => mutate('deposit')} disabled={busy} type="button" className="rh-button-primary">
-                Deposit
-              </button>
-              <button onClick={() => mutate('withdraw')} disabled={busy} type="button" className="rh-button-secondary">
-                Withdraw
-              </button>
-              <button onClick={() => mutate('debit')} disabled={busy} type="button" className="rh-button-ghost">
+              </button> */}
+                <button onClick={() => mutate('deposit')} disabled={busy} type="button" className="rh-button-primary">
+                  Deposit
+                </button>
+                <button onClick={() => mutate('withdraw')} disabled={busy} type="button" className="rh-button-secondary">
+                  Withdraw
+                </button>
+                {/* <button onClick={() => mutate('debit')} disabled={busy} type="button" className="rh-button-ghost">
                 Debit
               </button>
               <button onClick={() => mutate('credit')} disabled={busy} type="button" className="rh-button-ghost">
@@ -115,10 +117,11 @@ export default function WalletPage() {
               </button>
               <button onClick={loadWallet} disabled={busy} type="button" className="rh-button-secondary">
                 Refresh
-              </button>
+              </button> */}
+              </div>
             </div>
-          </div>
-        </SectionCard>
+          </SectionCard>
+        }
 
         <SectionCard title="Wallet record" subtitle="A summary of the wallet currently linked to your account.">
           {error ? <div className="mb-4"><ErrorState error={error} /></div> : null}
@@ -126,7 +129,7 @@ export default function WalletPage() {
             <DataTable
               rowKey={(row) => row.key}
               rows={[
-                { key: 'id', label: 'User ID', value: wallet.id },
+                // { key: 'id', label: 'User ID', value: wallet.id },
                 { key: 'username', label: 'Username', value: wallet.username },
                 { key: 'balance', label: 'Balance', value: formatMoney(wallet.balance) },
                 { key: 'currency', label: 'Currency', value: wallet.currency },

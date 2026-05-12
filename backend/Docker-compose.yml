@@ -256,6 +256,22 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - stonks_net
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: stonks-kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+    depends_on:
+      kafka:
+        condition: service_started
+    networks:
+      - stonks_net
+
 volumes:
   postgres_data:
 

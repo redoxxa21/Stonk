@@ -33,7 +33,7 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     loadPortfolio();
-    refreshMarket().catch(() => {});
+    // refreshMarket().catch(() => {});
   }, [user?.id]);
 
   const summary = useMemo(() => {
