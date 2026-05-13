@@ -74,35 +74,35 @@ export default function TradesPage() {
     <div className="space-y-6">
       <PageHeader title="Trades" subtitle="Place orders and review your recent trade activity." />
 
-      <SectionCard title="Submit trade" subtitle="Enter a symbol and quantity to place a buy or sell order.">
-        {error ? <div className="mb-4"><ErrorState error={error} /></div> : null}
-        <div className="mb-4 rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">
-          Use this form for quick trade entry. For additional symbol context, review the instrument in Market before submitting.
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <label className="block text-sm text-muted">
-            Symbol
-            <input value={form.symbol} onChange={(e) => setForm((current) => ({ ...current, symbol: e.target.value }))} className="rh-input" required />
-          </label>
-          <label className="block text-sm text-muted">
-            Quantity
-            <input type="number" min="1" step="1" value={form.quantity} onChange={(e) => setForm((current) => ({ ...current, quantity: e.target.value }))} className="rh-input" required />
-          </label>
-          <div className="flex items-end gap-2">
-            <button disabled={busy} type="button" onClick={() => submitTrade('BUY')} className="rh-button-positive">
-              Buy
-            </button>
-            <button disabled={sellDisabled} type="button" onClick={() => submitTrade('SELL')} className="rh-button-danger">
-              Sell
-            </button>
-          </div>
-        </div>
-        {sellError ? (
-          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
-            {sellError}
-          </div>
-        ) : null}
-      </SectionCard>
+      {/*<SectionCard title="Submit trade" subtitle="Enter a symbol and quantity to place a buy or sell order.">*/}
+      {/*  {error ? <div className="mb-4"><ErrorState error={error} /></div> : null}*/}
+      {/*  <div className="mb-4 rounded-2xl border border-line bg-[#242412] p-4 text-sm text-muted">*/}
+      {/*    Use this form for quick trade entry. For additional symbol context, review the instrument in Market before submitting.*/}
+      {/*  </div>*/}
+      {/*  <div className="grid gap-4 md:grid-cols-3">*/}
+      {/*    <label className="block text-sm text-muted">*/}
+      {/*      Symbol*/}
+      {/*      <input value={form.symbol} onChange={(e) => setForm((current) => ({ ...current, symbol: e.target.value }))} className="rh-input" required />*/}
+      {/*    </label>*/}
+      {/*    <label className="block text-sm text-muted">*/}
+      {/*      Quantity*/}
+      {/*      <input type="number" min="1" step="1" value={form.quantity} onChange={(e) => setForm((current) => ({ ...current, quantity: e.target.value }))} className="rh-input" required />*/}
+      {/*    </label>*/}
+      {/*    <div className="flex items-end gap-2">*/}
+      {/*      <button disabled={busy} type="button" onClick={() => submitTrade('BUY')} className="rh-button-positive">*/}
+      {/*        Buy*/}
+      {/*      </button>*/}
+      {/*      <button disabled={sellDisabled} type="button" onClick={() => submitTrade('SELL')} className="rh-button-danger">*/}
+      {/*        Sell*/}
+      {/*      </button>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*  {sellError ? (*/}
+      {/*    <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">*/}
+      {/*      {sellError}*/}
+      {/*    </div>*/}
+      {/*  ) : null}*/}
+      {/*</SectionCard>*/}
 
       <SectionCard title="Trade history" subtitle="Realtime execution records.">
         {error ? <div className="mb-4"><ErrorState error={error} /></div> : null}
