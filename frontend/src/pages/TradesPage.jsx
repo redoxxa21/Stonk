@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import DataTable from '../components/common/DataTable';
@@ -15,6 +16,7 @@ export default function TradesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ symbol: '', quantity: 1 });
+  const [sellError, setSellError] = useState('');
   const [busy, setBusy] = useState(false);
   const { canSell, loading: holdingsLoading } = usePortfolioHoldings();
 
@@ -36,11 +38,19 @@ export default function TradesPage() {
     loadTrades();
   }, [user?.id]);
 
+  useEffect(() => {
+    setSellError('');
+  }, [form.symbol, form.quantity, user?.id]);
+
   async function submitTrade(type) {
-    if (type === 'SELL' && !canSell(form.symbol, form.quantity)) return;
     setBusy(true);
     setError('');
     try {
+      if (type === 'SELL' && !canSell(form.symbol, form.quantity)) {
+        setSellError(`You need at least ${Number(form.quantity) || 0} shares of ${String(form.symbol || '').toUpperCase()} to sell.`);
+        return;
+      }
+      setSellError('');
       await apiClient.post(`/trades/${type.toLowerCase()}`, {
         userId: user.id,
         symbol: form.symbol,
@@ -58,7 +68,7 @@ export default function TradesPage() {
   if (loading) return <LoadingState label="Loading trades..." />;
   if (error && !trades.length) return <ErrorState error={error} onRetry={loadTrades} />;
 
-  const sellDisabled = busy || holdingsLoading || !canSell(form.symbol, form.quantity);
+  const sellDisabled = busy || holdingsLoading;
 
   return (
     <div className="space-y-6">
@@ -87,9 +97,9 @@ export default function TradesPage() {
             </button>
           </div>
         </div>
-        {form.symbol && !canSell(form.symbol, form.quantity) ? (
+        {sellError ? (
           <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
-            You need at least {Number(form.quantity) || 0} shares of {form.symbol.toUpperCase()} to sell.
+            {sellError}
           </div>
         ) : null}
       </SectionCard>
@@ -103,7 +113,15 @@ export default function TradesPage() {
           emptyDescription="This user has not executed any trades."
           columns={[
             { key: 'id', header: 'ID' },
-            { key: 'symbol', header: 'Symbol' },
+            {
+              key: 'symbol',
+              header: 'Symbol',
+              render: (row) => (
+                <Link to={`/market/${row.symbol}`} className="text-accent underline-offset-4 hover:underline">
+                  {row.symbol}
+                </Link>
+              ),
+            },
             { key: 'type', header: 'Type' },
             { key: 'quantity', header: 'Qty' },
             { key: 'price', header: 'Price', render: (row) => formatMoney(row.price) },

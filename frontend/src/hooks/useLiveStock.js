@@ -3,8 +3,9 @@ import { usePlatform } from '../context/PlatformContext';
 import { marketSocket } from '../lib/marketSocket';
 
 export function useLiveStock(symbol) {
-  const { loadSymbol, history, trackPrice } = usePlatform();
-  const [stock, setStock] = useState(null);
+  const { stocks, loadSymbol, history, trackPrice } = usePlatform();
+  const cachedStock = stocks.find((item) => String(item.symbol || '').toUpperCase() === String(symbol || '').toUpperCase()) || null;
+  const [stock, setStock] = useState(cachedStock);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -12,6 +13,13 @@ export function useLiveStock(symbol) {
     if (!symbol) return;
 
     let alive = true;
+
+    setStock((current) => {
+      if (current && String(current.symbol || '').toUpperCase() === String(symbol).toUpperCase()) {
+        return current;
+      }
+      return cachedStock;
+    });
 
     async function sync() {
       setLoading(true);
@@ -54,7 +62,7 @@ export function useLiveStock(symbol) {
       clearInterval(timer);
       unsubscribe();
     };
-  }, [symbol, loadSymbol, trackPrice]);
+  }, [symbol, cachedStock, loadSymbol, trackPrice]);
 
   return {
     stock,

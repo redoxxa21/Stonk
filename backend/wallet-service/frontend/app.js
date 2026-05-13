@@ -7,6 +7,10 @@ const state = {
   sessionUser: null,
 };
 
+const TRADE_POLL_MIN_MS = 5000;
+const TRADE_POLL_MAX_MS = 15000;
+let tradePollTimer = null;
+
 const el = {
   connectionBadge: document.getElementById('connectionBadge'),
   pingBtn: document.getElementById('pingBtn'),
@@ -156,6 +160,79 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+function normalizeTradeStatus(status) {
+  return String(status || '').trim().toUpperCase();
+}
+
+function randomTradePollDelay() {
+  return TRADE_POLL_MIN_MS + Math.floor(Math.random() * (TRADE_POLL_MAX_MS - TRADE_POLL_MIN_MS + 1));
+}
+
+function clearTradePolling() {
+  if (tradePollTimer) {
+    clearTimeout(tradePollTimer);
+    tradePollTimer = null;
+  }
+}
+
+function getHoldingQuantity(holding) {
+  const quantity = Number(holding?.quantity);
+  return Number.isFinite(quantity) ? quantity : 0;
+}
+
+async function fetchHolding(userId, symbol) {
+  return api(`/portfolio/${userId}/holding/${encodeURIComponent(symbol)}`);
+}
+
+function watchPendingTrade(tradeId, status) {
+  clearTradePolling();
+
+  if (normalizeTradeStatus(status) !== 'PENDING' || tradeId === null || tradeId === undefined) {
+    return false;
+  }
+
+  const poll = async () => {
+    const refreshed = await tradeDetail(tradeId);
+    const refreshedStatus = normalizeTradeStatus(refreshed?.status);
+
+    if (refreshedStatus === 'PENDING') {
+      const delay = randomTradePollDelay();
+      setMessage('info', `Trade #${tradeId} is pending. Refreshing again in ${Math.round(delay / 1000)}s.`);
+      tradePollTimer = setTimeout(() => {
+        tradePollTimer = null;
+        poll().catch((error) => {
+          clearTradePolling();
+          setMessage('error', error.message);
+        });
+      }, delay);
+      return;
+    }
+
+    clearTradePolling();
+    setMessage(refreshedStatus === 'COMPLETED' ? 'success' : 'error', `Trade #${tradeId} is ${refreshedStatus.toLowerCase()}.`);
+  };
+
+  const delay = randomTradePollDelay();
+  setMessage('info', `Trade #${tradeId} is pending. Refreshing again in ${Math.round(delay / 1000)}s.`);
+  tradePollTimer = setTimeout(() => {
+    tradePollTimer = null;
+    poll().catch((error) => {
+      clearTradePolling();
+      setMessage('error', error.message);
+    });
+  }, delay);
+
+  return true;
+}
+
+function handleTradeSubmissionOutcome(trade, successText) {
+  if (!watchPendingTrade(trade?.id, trade?.status)) {
+    setMessage('success', successText);
+  }
+}
+
+window.addEventListener('beforeunload', clearTradePolling);
+
 function syncSessionUI() {
   el.sessionUser.textContent = state.username ? `${state.username}${state.role ? ` (${state.role})` : ''}` : 'No active session';
   el.sessionUserId.textContent = state.userId || '-';
@@ -277,7 +354,7 @@ async function loadPortfolio(userId) {
 }
 
 async function loadHolding(userId, symbol) {
-  const holding = await api(`/portfolio/${userId}/holding/${encodeURIComponent(symbol)}`);
+  const holding = await fetchHolding(userId, symbol);
   showResult(el.portfolioResult, holding);
   return holding;
 }
@@ -340,6 +417,7 @@ document.getElementById('pingBtn').addEventListener('click', async () => {
 });
 
 document.getElementById('clearBtn').addEventListener('click', () => {
+  clearTradePolling();
   localStorage.removeItem('stonk_token');
   localStorage.removeItem('stonk_username');
   localStorage.removeItem('stonk_role');
@@ -544,7 +622,24 @@ forms.portfolioTrade.addEventListener('submit', async (event) => {
   const action = event.submitter?.value;
   try {
     const { userId, symbol, quantity, price } = readForm(forms.portfolioTrade, ['userId', 'symbol', 'quantity', 'price']);
-    await tradeHolding(userId, { symbol, quantity: Number(quantity), price: Number(price) }, action);
+    const tradeQuantity = Number(quantity);
+
+    if (action === 'sell') {
+      let holding;
+      try {
+        holding = await fetchHolding(userId, symbol);
+      } catch (error) {
+        if (error.status === 404) {
+          throw new Error('Not enough stocks to sell.');
+        }
+        throw error;
+      }
+      if (getHoldingQuantity(holding) < tradeQuantity) {
+        throw new Error('Not enough stocks to sell.');
+      }
+    }
+
+    await tradeHolding(userId, { symbol, quantity: tradeQuantity, price: Number(price) }, action);
     setMessage('success', `${action} request submitted for ${symbol}.`);
   } catch (error) {
     setMessage('error', error.message);
@@ -556,8 +651,8 @@ forms.tradeAction.addEventListener('submit', async (event) => {
   const action = event.submitter?.value;
   try {
     const { userId, symbol, quantity } = readForm(forms.tradeAction, ['userId', 'symbol', 'quantity']);
-    await executeTrade(action, { userId: Number(userId), symbol, quantity: Number(quantity) });
-    setMessage('success', `${action} trade submitted for ${symbol}.`);
+    const trade = await executeTrade(action, { userId: Number(userId), symbol, quantity: Number(quantity) });
+    handleTradeSubmissionOutcome(trade, `${action} trade submitted for ${symbol}.`);
   } catch (error) {
     setMessage('error', error.message);
   }
@@ -578,8 +673,8 @@ forms.tradeDetail.addEventListener('submit', async (event) => {
   event.preventDefault();
   try {
     const { id } = readForm(forms.tradeDetail, ['id']);
-    await tradeDetail(id);
-    setMessage('success', `Loaded trade ${id}.`);
+    const trade = await tradeDetail(id);
+    handleTradeSubmissionOutcome(trade, `Loaded trade ${id}.`);
   } catch (error) {
     setMessage('error', error.message);
   }

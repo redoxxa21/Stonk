@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, ShoppingCart, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import SectionCard from '../components/common/SectionCard';
 import StatCard from '../components/common/StatCard';
@@ -28,6 +28,7 @@ export default function MarketSymbolPage() {
   const [quantity, setQuantity] = useState(1);
   const [orderPrice, setOrderPrice] = useState('');
   const [message, setMessage] = useState('');
+  const [sellError, setSellError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -35,6 +36,10 @@ export default function MarketSymbolPage() {
       setOrderPrice(String(stock.currentPrice));
     }
   }, [stock?.currentPrice]);
+
+  useEffect(() => {
+    setSellError('');
+  }, [symbol, quantity, user?.id]);
 
   useEffect(() => {
     let alive = true;
@@ -89,6 +94,11 @@ export default function MarketSymbolPage() {
     setSubmitting(true);
     setMessage('');
     try {
+      if (type === 'SELL' && !canSell(stock.symbol, quantity)) {
+        setSellError(`You need at least ${Number(quantity) || 0} shares of ${stock.symbol} to sell.`);
+        return;
+      }
+      setSellError('');
       await apiClient.post(`/trades/${type.toLowerCase()}`, {
         userId: user.id,
         symbol: stock.symbol,
@@ -107,9 +117,7 @@ export default function MarketSymbolPage() {
   if (!stock) return null;
 
   const recent = (history[symbol] || []).slice(-8).reverse();
-  const sellQuantity = Number(quantity);
-  const canSellSelectedSymbol = canSell(stock.symbol, sellQuantity);
-  const sellDisabled = submitting || holdingsLoading || !canSellSelectedSymbol;
+  const sellDisabled = submitting || holdingsLoading;
 
   return (
     <div className="space-y-6">
@@ -217,9 +225,9 @@ export default function MarketSymbolPage() {
                 Use live price
               </button> */}
             </div>
-            {!holdingsLoading && !canSellSelectedSymbol ? (
+            {sellError ? (
               <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
-                You need at least {sellQuantity || 0} shares of {stock.symbol} to sell.
+                {sellError}
               </div>
             ) : null}
             {message ? (
