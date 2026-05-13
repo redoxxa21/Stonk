@@ -54,6 +54,19 @@ services:
     networks:
       - stonks_net
 
+  frontend:
+    build:
+      context: ../frontend
+    container_name: stonks-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      - API_GATEWAY_URL=http://api-gateway:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - stonks_net
+
   auth-service:
     build:
       context: ./auth-service
